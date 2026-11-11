@@ -1,0 +1,31 @@
+name: Desplegar en el servidor
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desplegar-studentscope-mj-api
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    runs-on: [self-hosted, studentscope-mj-backend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copiar el codigo al servidor
+        run: |
+          destino="$HOME/studentscope-mj/studentscope-mj-backend"
+          mkdir -p "$destino"
+          rsync -a --delete \
+            --exclude='.git' --exclude='.github' \
+            --exclude='node_modules' --exclude='.env' \
+            ./ "$destino/"
+
+      - name: Desplegar
+        run: $HOME/studentscope-mj/desplegar.sh api
