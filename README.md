@@ -89,9 +89,18 @@ Cada tarea se hace en una rama propia, con pull request hacia `dev`. Solo `dev` 
 
 ---
 
+## Despliegue
+
+Cada push a `main` despliega la API en el servidor mediante GitHub Actions (`.github/workflows/desplegar.yml`) y un runner propio con la etiqueta `studentscope-mj-backend`.
+
+El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh api`, que reconstruye la imagen, inicia la base de datos y espera a que `/api/health` responda sano. La configuración del servidor (Docker Compose, Caddy y el archivo `.env` con los secretos) vive fuera de los repositorios.
+
+---
+
 ## Registro de cambios
 
 ### Esqueleto inicial
 * Servidor HTTP con `GET /api/health` y respuesta 404 en JSON para el resto de rutas.
 * Cuatro pruebas automáticas del servidor.
 * `Dockerfile`, `.dockerignore`, `.gitignore`, `.editorconfig` y `.env.example`.
+* Se agrega el workflow `desplegar.yml`, que despliega en el servidor con cada push a `main`.
