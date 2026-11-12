@@ -30,15 +30,21 @@ La API gestiona **cuentas de usuario**: registro, inicio y cierre de sesión, pe
 ```bash
 npm install
 cp .env.example .env
-npm start
+npm run start:local
 ```
 
-Antes de iniciar hay que definir las variables de entorno (ver abajo) y tener una base de datos PostgreSQL vacía. Al arrancar, la API aplica las migraciones pendientes y crea el administrador inicial si corresponde.
+1. Crea una base de datos PostgreSQL vacía.
+2. Copia `.env.example` a `.env` y completa los valores (ver abajo). El archivo `.env` no existe en el repositorio a propósito: está en `.gitignore` y nunca se sube.
+3. Genera el secreto de sesión con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` y pégalo en `JWT_SECRET`.
+4. Inicia con `npm run start:local`. Al arrancar, la API aplica las migraciones pendientes y crea el administrador inicial si corresponde.
+
+Node no lee el `.env` por sí solo: los scripts `start:local` y `dev` lo cargan con `--env-file=.env`. En el servidor y en Docker las variables llegan desde Docker Compose, por eso `npm start` no carga ningún archivo.
 
 | Comando | Descripción |
 | :--- | :--- |
-| `npm start` | Inicia el servidor. |
-| `npm run dev` | Inicia el servidor y lo reinicia al guardar cambios. |
+| `npm start` | Inicia el servidor con las variables que ya existan en el entorno (producción y Docker). |
+| `npm run start:local` | Inicia el servidor cargando el archivo `.env`. |
+| `npm run dev` | Igual que el anterior, y lo reinicia al guardar cambios. |
 | `npm test` | Ejecuta las pruebas. |
 
 ---
