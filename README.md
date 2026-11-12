@@ -27,16 +27,32 @@ La API gestiona **cuentas de usuario**: registro, inicio y cierre de sesión, pe
 
 ## Uso
 
+### Opción A: base de datos de desarrollo del proyecto (recomendada)
+
+No necesitas conocer ninguna contraseña. El proyecto crea su propio PostgreSQL de desarrollo en la carpeta `.postgres-dev` (ignorada por Git), que escucha solo en `127.0.0.1:5433` y no usa contraseña.
+
 ```bash
 npm install
-cp .env.example .env
+npm run db:iniciar
+npm run env:preparar
 npm run start:local
 ```
 
-1. Crea una base de datos PostgreSQL vacía, por ejemplo: `psql -U postgres -c "CREATE DATABASE studentscope_mj;"` (pedirá la contraseña de tu usuario de PostgreSQL).
-2. Copia `.env.example` a `.env` y completa los valores (ver abajo). El archivo `.env` no existe en el repositorio a propósito: está en `.gitignore` y nunca se sube.
+1. `npm run db:iniciar` crea la base la primera vez, la enciende y crea `studentscope_mj`. Hay que encenderla cada vez que reinicies el equipo.
+2. `npm run env:preparar` crea o completa el archivo `.env`: genera `JWT_SECRET` y `ADMIN_PASSWORD` al azar y rellena los datos de la base. No cambia ningún valor que ya hayas puesto y no muestra secretos.
+3. Abre `.env`, escribe tu correo en `ADMIN_EMAIL` y consulta ahí la contraseña generada del administrador (puedes cambiarla por otra de al menos 8 caracteres, con letras y números).
+4. `npm run start:local` inicia la API.
+
+Esta base es solo para desarrollo: no tiene contraseña, así que no la uses para nada que importe. Para apagarla: `npm run db:detener`.
+
+### Opción B: tu propio PostgreSQL
+
+1. Crea una base de datos vacía, por ejemplo: `psql -U postgres -c "CREATE DATABASE studentscope_mj;"` (pedirá la contraseña de tu usuario de PostgreSQL).
+2. Copia `.env.example` a `.env` y completa los valores (ver más abajo). El archivo `.env` no existe en el repositorio a propósito: está en `.gitignore` y nunca se sube.
 3. Genera el secreto de sesión con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` y pégalo en `JWT_SECRET`.
-4. Inicia con `npm run start:local`. Al arrancar, la API aplica las migraciones pendientes y crea el administrador inicial si corresponde.
+4. Inicia con `npm run start:local`.
+
+En ambos casos, al arrancar la API aplica las migraciones pendientes y crea el administrador inicial si corresponde.
 
 Node no lee el `.env` por sí solo: los scripts `start:local` y `dev` lo cargan con `--env-file=.env`. En el servidor y en Docker las variables llegan desde Docker Compose, por eso `npm start` no carga ningún archivo.
 
@@ -45,6 +61,10 @@ Node no lee el `.env` por sí solo: los scripts `start:local` y `dev` lo cargan 
 | `npm start` | Inicia el servidor con las variables que ya existan en el entorno (producción y Docker). |
 | `npm run start:local` | Inicia el servidor cargando el archivo `.env`. |
 | `npm run dev` | Igual que el anterior, y lo reinicia al guardar cambios. |
+| `npm run db:iniciar` | Crea (si no existe) y enciende la base de datos de desarrollo del proyecto. |
+| `npm run db:detener` | Apaga la base de datos de desarrollo. |
+| `npm run db:estado` | Indica si la base de desarrollo está encendida. |
+| `npm run env:preparar` | Crea o completa `.env` con valores generados, sin pisar los que ya existan. |
 | `npm test` | Ejecuta las pruebas. |
 
 ---
@@ -192,3 +212,4 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * 86 pruebas, incluidas las del repositorio contra PostgreSQL real y una prueba de concurrencia.
 * Mensajes de error claros al iniciar (contraseña incorrecta, PostgreSQL apagado o base inexistente) en lugar de un volcado técnico.
 * Scripts `start:local` y `dev` que cargan el archivo `.env`.
+* Base de datos de desarrollo del proyecto (`npm run db:iniciar`) y script `env:preparar`, para trabajar en local sin conocer contraseñas de PostgreSQL.

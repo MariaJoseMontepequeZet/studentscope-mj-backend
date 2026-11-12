@@ -11,6 +11,10 @@
     "start": "node server.js",
     "start:local": "node --env-file=.env server.js",
     "dev": "node --watch --env-file=.env server.js",
+    "db:iniciar": "node scripts/db-local.mjs iniciar",
+    "db:detener": "node scripts/db-local.mjs detener",
+    "db:estado": "node scripts/db-local.mjs estado",
+    "env:preparar": "node scripts/preparar-env.mjs",
     "test": "node --test \"test/**/*.test.js\""
   },
   "dependencies": {
