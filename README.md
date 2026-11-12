@@ -33,7 +33,7 @@ cp .env.example .env
 npm run start:local
 ```
 
-1. Crea una base de datos PostgreSQL vacía.
+1. Crea una base de datos PostgreSQL vacía, por ejemplo: `psql -U postgres -c "CREATE DATABASE studentscope_mj;"` (pedirá la contraseña de tu usuario de PostgreSQL).
 2. Copia `.env.example` a `.env` y completa los valores (ver abajo). El archivo `.env` no existe en el repositorio a propósito: está en `.gitignore` y nunca se sube.
 3. Genera el secreto de sesión con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` y pégalo en `JWT_SECRET`.
 4. Inicia con `npm run start:local`. Al arrancar, la API aplica las migraciones pendientes y crea el administrador inicial si corresponde.
@@ -63,6 +63,19 @@ Node no lee el `.env` por sí solo: los scripts `start:local` y `dev` lo cargan 
 | `BCRYPT_COSTE` | No | Coste del hash de contraseñas. Por defecto `12`. |
 
 \* Basta con una de las dos formas de configurar la base de datos. El archivo `.env` real nunca se sube al repositorio.
+
+---
+
+## Problemas frecuentes al iniciar
+
+Si la API no arranca, el mensaje indica la causa y qué revisar. Los más comunes:
+
+| Mensaje | Causa | Solución |
+| :--- | :--- | :--- |
+| `la autentificación password falló para el usuario "..."` | `DB_USER` o `DB_PASSWORD` no coinciden con tu PostgreSQL. Con los valores de ejemplo de `.env.example` aparece este error. | Pon en `.env` el usuario y la contraseña reales. Si la contraseña tiene caracteres especiales, usa `DB_PASSWORD` en lugar de `DATABASE_URL`. |
+| `ECONNREFUSED` | PostgreSQL no está en ejecución, o el host o el puerto son incorrectos. | Inicia PostgreSQL y revisa `DB_HOST` y `DB_PORT`. |
+| `la base de datos "..." no existe` | Falta crear la base. | `CREATE DATABASE studentscope_mj;` |
+| `JWT_SECRET debe tener al menos 32 caracteres` | Falta el secreto de sesión. | Genera uno como se explica arriba. |
 
 ---
 
@@ -177,3 +190,5 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Administración de cuentas: listar, editar, eliminar, promover y degradar, con la regla de que siempre quede un administrador.
 * Creación del administrador inicial desde `ADMIN_EMAIL` y `ADMIN_PASSWORD`.
 * 86 pruebas, incluidas las del repositorio contra PostgreSQL real y una prueba de concurrencia.
+* Mensajes de error claros al iniciar (contraseña incorrecta, PostgreSQL apagado o base inexistente) en lugar de un volcado técnico.
+* Scripts `start:local` y `dev` que cargan el archivo `.env`.
