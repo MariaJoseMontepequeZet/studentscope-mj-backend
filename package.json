@@ -9,7 +9,18 @@
   },
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
-    "test": "node --test"
+    "start:local": "node --env-file=.env server.js",
+    "dev": "node --watch --env-file=.env server.js",
+    "db:iniciar": "node scripts/db-local.mjs iniciar",
+    "db:detener": "node scripts/db-local.mjs detener",
+    "db:estado": "node scripts/db-local.mjs estado",
+    "env:preparar": "node scripts/preparar-env.mjs",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.1"
   }
 }

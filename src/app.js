@@ -1,21 +1,39 @@
-import { createServer } from 'node:http';
+import express from 'express';
+import { ErrorApi } from './errores.js';
+import { manejarErrores } from './middleware/errores.js';
+import { crearLimiteIntentos } from './middleware/limiteIntentos.js';
+import { sinCache, verificarOrigen } from './middleware/origen.js';
+import { crearRequiereSesion } from './middleware/sesion.js';
+import { crearRutasAuth } from './rutas/auth.js';
+import { crearRutasUsuarios } from './rutas/usuarios.js';
+import { crearServicioCuentas } from './servicios/cuentas.js';
 
-const CONTENT_TYPE_JSON = 'application/json; charset=utf-8';
+export function crearApp({
+  repositorio,
+  config,
+  comprobarSalud = async () => true,
+  limiteLogin = crearLimiteIntentos(),
+  registrarError = console.error
+}) {
+  const servicio = crearServicioCuentas({ repositorio, config });
+  const requiereSesion = crearRequiereSesion({ repositorio, config });
+  const app = express();
 
-function responderJSON(res, codigo, cuerpo) {
-  res.writeHead(codigo, { 'Content-Type': CONTENT_TYPE_JSON });
-  res.end(JSON.stringify(cuerpo));
-}
+  app.disable('x-powered-by');
+  app.use('/api', sinCache);
+  app.use(express.json({ limit: '10kb' }));
+  app.use(verificarOrigen);
 
-export function crearServidor() {
-  return createServer((req, res) => {
-    const ruta = req.url.split('?')[0];
-
-    if (req.method === 'GET' && ruta === '/api/health') {
-      responderJSON(res, 200, { estado: 'ok' });
-      return;
-    }
-
-    responderJSON(res, 404, { error: 'No encontrado' });
+  app.get('/api/health', async (req, res) => {
+    const sano = await comprobarSalud().catch(() => false);
+    res.status(sano ? 200 : 503).json({ estado: sano ? 'ok' : 'degradado' });
   });
+
+  app.use('/api/auth', crearRutasAuth({ servicio, requiereSesion, limiteLogin, config }));
+  app.use('/api/usuarios', crearRutasUsuarios({ servicio, requiereSesion }));
+
+  app.use((req, res, next) => next(new ErrorApi(404, 'NO_ENCONTRADO', 'No encontrado')));
+  app.use(manejarErrores(registrarError));
+
+  return { app, servicio };
 }
