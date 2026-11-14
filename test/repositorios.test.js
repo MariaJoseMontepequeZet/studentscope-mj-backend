@@ -1,9 +1,11 @@
+import { readdirSync } from 'node:fs';
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { crearPool } from '../src/db/pool.js';
 import { migrar } from '../src/db/migrar.js';
 import { crearRepositorioUsuariosMemoria } from '../src/repositorios/usuariosMemoria.js';
 import { crearRepositorioUsuariosPg } from '../src/repositorios/usuariosPg.js';
+import { reiniciarEsquema } from './ayudas/baseDatos.js';
 import { probarContratoRepositorio } from './ayudas/contratoRepositorio.js';
 
 probarContratoRepositorio('memoria', () => crearRepositorioUsuariosMemoria());
@@ -15,10 +17,7 @@ if (!urlPruebas) {
 } else {
   const pool = crearPool({ connectionString: urlPruebas });
 
-  before(async () => {
-    await pool.query('DROP TABLE IF EXISTS usuarios, migraciones CASCADE');
-    await migrar(pool);
-  });
+  before(() => reiniciarEsquema(pool));
 
   after(() => pool.end());
 
@@ -31,8 +30,12 @@ if (!urlPruebas) {
     const segundaVez = await migrar(pool);
     const { rows } = await pool.query('SELECT count(*)::int AS total FROM migraciones');
 
+    const archivos = readdirSync(new URL('../src/db/migraciones/', import.meta.url)).filter((f) =>
+      f.endsWith('.sql')
+    );
+
     assert.deepEqual(segundaVez, []);
-    assert.equal(rows[0].total, 1);
+    assert.equal(rows[0].total, archivos.length);
   });
 
   test('postgres: la base rechaza roles invalidos y nombres vacios', async () => {

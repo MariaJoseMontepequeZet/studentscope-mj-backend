@@ -2,6 +2,7 @@ import { crearApp } from './src/app.js';
 import { leerConfig } from './src/config.js';
 import { crearPool } from './src/db/pool.js';
 import { migrar } from './src/db/migrar.js';
+import { sembrarEstudiantesDeEjemplo } from './src/db/sembrar.js';
 import { describirErrorInicio } from './src/errorInicio.js';
 import { crearRepositorioUsuariosPg } from './src/repositorios/usuariosPg.js';
 
@@ -11,6 +12,7 @@ async function iniciar() {
 
   try {
     await migrar(pool, console.log);
+    if (config.sembrarEjemplo) await sembrarEstudiantesDeEjemplo(pool, console.log);
 
     const { app, servicio } = crearApp({
       repositorio: crearRepositorioUsuariosPg(pool),
