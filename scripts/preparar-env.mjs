@@ -9,7 +9,8 @@ const BASE_DESARROLLO = {
   DB_NAME: 'studentscope_mj',
   DB_USER: 'postgres',
   PORT: '3100',
-  NODE_ENV: 'development'
+  NODE_ENV: 'development',
+  SEMBRAR_EJEMPLO: 'true'
 };
 
 const ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
