@@ -13,8 +13,9 @@ Repositorios del proyecto:
 
 ## Estado actual
 
-La API gestiona **cuentas de usuario**: registro, inicio y cierre de sesión, perfil propio y administración de cuentas (editar, eliminar, promover y degradar administradores). Los datos viven en PostgreSQL y la sesión se guarda en una cookie segura. El CRUD de estudiantes y los cursos se agregan en las siguientes entregas.
+La API gestiona **cuentas de usuario** y ya tiene en PostgreSQL el **modelo de datos de estudiantes y cursos** (tablas, restricciones y datos de ejemplo). Las rutas para consultarlos y administrarlos se agregan en la siguiente entrega.
 
+Las cuentas: registro, inicio y cierre de sesión, perfil propio y administración de cuentas (editar, eliminar, promover y degradar administradores). Los datos viven en PostgreSQL y la sesión se guarda en una cookie segura. 
 ---
 
 ## Requisitos
@@ -64,8 +65,10 @@ Node no lee el `.env` por sí solo: los scripts `start:local` y `dev` lo cargan 
 | `npm run db:iniciar` | Crea (si no existe) y enciende la base de datos de desarrollo del proyecto. |
 | `npm run db:detener` | Apaga la base de datos de desarrollo. |
 | `npm run db:estado` | Indica si la base de desarrollo está encendida. |
+| `npm run db:sembrar` | Aplica las migraciones y carga los estudiantes de ejemplo si la tabla está vacía. |
 | `npm run env:preparar` | Crea o completa `.env` con valores generados, sin pisar los que ya existan. |
-| `npm test` | Ejecuta las pruebas. |
+| `npm test` | Ejecuta las pruebas (sin base de datos se omiten las de PostgreSQL). |
+| `npm run test:pg` | Ejecuta todas las pruebas, incluidas las de PostgreSQL, contra la base `studentscope_test` de desarrollo. |
 
 ---
 
@@ -77,6 +80,7 @@ Node no lee el `.env` por sí solo: los scripts `start:local` y `dev` lo cargan 
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Sí* | Alternativa a `DATABASE_URL`, que tiene prioridad. |
 | `JWT_SECRET` | Sí | Secreto para firmar la sesión. Mínimo 32 caracteres. La API no arranca sin él. |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | No | Si no existe ningún administrador, se crea uno con estos datos al iniciar. Si ya existe una cuenta con ese correo, se promueve. |
+| `SEMBRAR_EJEMPLO` | No | Con `true`, al iniciar carga 35 estudiantes de ejemplo si la tabla de estudiantes está vacía. Por defecto `false`. |
 | `PORT` | No | Puerto de la API. Por defecto `3100`. |
 | `NODE_ENV` | No | Con `production` la cookie de sesión lleva el atributo `Secure`. |
 | `SESION_HORAS` | No | Duración de la sesión. Por defecto `8`. |
@@ -96,6 +100,30 @@ Si la API no arranca, el mensaje indica la causa y qué revisar. Los más comune
 | `ECONNREFUSED` | PostgreSQL no está en ejecución, o el host o el puerto son incorrectos. | Inicia PostgreSQL y revisa `DB_HOST` y `DB_PORT`. |
 | `la base de datos "..." no existe` | Falta crear la base. | `CREATE DATABASE studentscope_mj;` |
 | `JWT_SECRET debe tener al menos 32 caracteres` | Falta el secreto de sesión. | Genera uno como se explica arriba. |
+
+---
+
+## Modelo de datos
+
+Las migraciones están en `src/db/migraciones/` y se aplican solas al iniciar, cada una una sola vez y dentro de una transacción.
+
+| Tabla | Contenido y reglas |
+| :--- | :--- |
+| `usuarios` | Cuentas. Correo único sin distinguir mayúsculas y rol `usuario` o `administrador`. |
+| `planes` | Los tres planes y su precio: Básico 29.99, Estándar 59.99 y Premium 99.99. El precio se lee de aquí; no se guarda en cada estudiante, así que nunca puede contradecir al plan. |
+| `cursos` | Catálogo de 30 cursos: categoría, nivel, semanas, plan, instructor y descripción. Nombre único. |
+| `estudiantes` | Nombre, apellido, correo único sin distinguir mayúsculas, ciudad, curso, plan, progreso, fecha de inscripción y estado. |
+
+La propia base impone las reglas, además de la API:
+
+* El progreso va de 0 a 100 y la fecha de inscripción no puede ser anterior al 2023-01-01. Que no sea futura lo valida la API, porque una restricción de la base no puede depender de la fecha actual.
+* Nombre, apellido y ciudad no pueden estar vacíos.
+* El plan y el curso de un estudiante deben existir.
+* Un curso con estudiantes no se puede eliminar (`ON DELETE RESTRICT`).
+
+### Datos de ejemplo
+
+Los planes y los cursos forman parte de la migración. Los **35 estudiantes de ejemplo** (`src/db/datos/estudiantes-ejemplo.json`) se cargan con `SEMBRAR_EJEMPLO=true` al iniciar o con `npm run db:sembrar`. La carga es idempotente: si ya hay estudiantes no hace nada, se ejecuta dentro de una transacción (si falla no queda nada a medias) y usa un bloqueo para que dos instancias a la vez no dupliquen los datos.
 
 ---
 
@@ -143,7 +171,7 @@ Los errores responden `{ "error": "mensaje", "codigo": "CODIGO" }` y, cuando se 
 npm test
 ```
 
-Las pruebas de rutas y de reglas usan un repositorio en memoria y no necesitan base de datos. Para probar también contra PostgreSQL real, indica una base **vacía y desechable** (las pruebas borran sus tablas):
+Las pruebas de rutas y de reglas usan un repositorio en memoria y no necesitan base de datos. Las del repositorio y del esquema se ejecutan contra PostgreSQL real con `npm run test:pg` (usa la base `studentscope_test` que crea `npm run db:iniciar`) o indicando otra base **vacía y desechable**, porque las pruebas **borran todo su contenido**:
 
 ```bash
 TEST_DATABASE_URL=postgres://usuario@localhost:5432/studentscope_test npm test
@@ -174,7 +202,8 @@ La imagen usa `node:24-alpine`, instala solo las dependencias de producción y e
 | `src/rutas/` | Rutas de autenticación y de administración de cuentas. |
 | `src/servicios/` | Reglas de negocio de las cuentas. |
 | `src/repositorios/` | Acceso a datos: PostgreSQL y una versión en memoria para pruebas. |
-| `src/db/` | Conexión, ejecutor de migraciones y archivos SQL en `migraciones/`. |
+| `src/db/` | Conexión, ejecutor de migraciones, archivos SQL en `migraciones/`, carga de datos de ejemplo y su archivo en `datos/`. |
+| `scripts/` | Herramientas de desarrollo: base local, preparación del `.env`, carga de ejemplos y pruebas con PostgreSQL. |
 | `src/middleware/` | Sesión, permisos, comprobación de origen, límite de intentos y errores. |
 | `src/seguridad/` | Hash de contraseñas y firma de sesiones. |
 | `test/` | Pruebas automáticas. |
@@ -213,3 +242,9 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Mensajes de error claros al iniciar (contraseña incorrecta, PostgreSQL apagado o base inexistente) en lugar de un volcado técnico.
 * Scripts `start:local` y `dev` que cargan el archivo `.env`.
 * Base de datos de desarrollo del proyecto (`npm run db:iniciar`) y script `env:preparar`, para trabajar en local sin conocer contraseñas de PostgreSQL.
+
+### Estudiantes y cursos: datos
+* Migración `002` con las tablas `planes`, `cursos` y `estudiantes` y sus restricciones.
+* Carga idempotente de 30 cursos y 35 estudiantes de ejemplo, con `SEMBRAR_EJEMPLO` y `npm run db:sembrar`.
+* Las pruebas con PostgreSQL se ejecutan una a una (`--test-concurrency=1`) para no pisarse, y `npm run test:pg` las ejecuta contra una base de pruebas con una protección: se niega a borrar una base cuyo nombre no contenga "test".
+* 123 pruebas.

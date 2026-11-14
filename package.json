@@ -14,8 +14,10 @@
     "db:iniciar": "node scripts/db-local.mjs iniciar",
     "db:detener": "node scripts/db-local.mjs detener",
     "db:estado": "node scripts/db-local.mjs estado",
+    "db:sembrar": "node --env-file=.env scripts/sembrar.mjs",
     "env:preparar": "node scripts/preparar-env.mjs",
-    "test": "node --test \"test/**/*.test.js\""
+    "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
+    "test:pg": "node scripts/test-pg.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

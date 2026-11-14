@@ -7,6 +7,7 @@ const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const carpetaDatos = path.join(raiz, '.postgres-dev');
 const PUERTO = 5433;
 const BASE = 'studentscope_mj';
+const BASE_PRUEBAS = 'studentscope_test';
 const USUARIO = 'postgres';
 const esWindows = process.platform === 'win32';
 
@@ -85,14 +86,20 @@ function iniciar() {
     }
   }
 
-  const existe = psql(`SELECT 1 FROM pg_database WHERE datname = '${BASE}'`);
-  if (existe.status !== 0) fallar(`No se pudo conectar a PostgreSQL en el puerto ${PUERTO}:\n${existe.stderr}`);
-  if (existe.stdout.trim() !== '1') {
-    const creacion = psql(`CREATE DATABASE ${BASE}`);
-    if (creacion.status !== 0) fallar(`No se pudo crear la base ${BASE}:\n${creacion.stderr}`);
-  }
+  [BASE, BASE_PRUEBAS].forEach((nombre) => {
+    const existe = psql(`SELECT 1 FROM pg_database WHERE datname = '${nombre}'`);
+    if (existe.status !== 0) fallar(`No se pudo conectar a PostgreSQL en el puerto ${PUERTO}:
+${existe.stderr}`);
+    if (existe.stdout.trim() !== '1') {
+      const creacion = psql(`CREATE DATABASE ${nombre}`);
+      if (creacion.status !== 0) fallar(`No se pudo crear la base ${nombre}:
+${creacion.stderr}`);
+    }
+  });
 
-  console.log(`Base de datos lista: ${BASE} en 127.0.0.1:${PUERTO} (usuario ${USUARIO}, sin contraseña).`);
+  console.log(
+    `Bases de datos listas: ${BASE} y ${BASE_PRUEBAS} en 127.0.0.1:${PUERTO} (usuario ${USUARIO}, sin contraseña).`
+  );
 }
 
 function detener() {
