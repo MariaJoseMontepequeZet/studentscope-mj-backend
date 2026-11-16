@@ -13,7 +13,7 @@ Repositorios del proyecto:
 
 ## Estado actual
 
-La API gestiona **cuentas de usuario** y ya tiene en PostgreSQL el **modelo de datos de estudiantes y cursos** (tablas, restricciones y datos de ejemplo). Las rutas para consultarlos y administrarlos se agregan en la siguiente entrega.
+La API gestiona **cuentas de usuario** y la **API de estudiantes y cursos** sobre PostgreSQL: listado con búsqueda, filtros y paginación en el servidor, alta, edición y baja solo para administradores, catálogo de cursos con inscritos reales, resumen para el dashboard y reportes.
 
 Las cuentas: registro, inicio y cierre de sesión, perfil propio y administración de cuentas (editar, eliminar, promover y degradar administradores). Los datos viven en PostgreSQL y la sesión se guarda en una cookie segura. 
 ---
@@ -157,11 +157,50 @@ Hay dos roles: `usuario` y `administrador`.
 | POST | `/api/auth/logout` | Público | Cierra la sesión. |
 | GET | `/api/auth/yo` | Sesión | Datos de la cuenta actual. |
 | PATCH | `/api/auth/yo` | Sesión | Cambia el nombre o la contraseña (exige la actual). |
+| GET | `/api/estudiantes` | Administrador | Lista con búsqueda, filtros y paginación (ver abajo). |
+| GET | `/api/estudiantes/:id` | Administrador | Detalle de un estudiante. |
+| POST | `/api/estudiantes` | Administrador | Crea un estudiante (`201`). |
+| PATCH | `/api/estudiantes/:id` | Administrador | Edita solo los campos enviados. |
+| DELETE | `/api/estudiantes/:id` | Administrador | Elimina un estudiante (`204`). |
+| GET | `/api/cursos` | Sesión | Catálogo de 30 cursos con el número real de inscritos. |
+| GET | `/api/resumen` | Sesión | Totales, activos, progreso promedio y estudiantes por ciudad. Solo números agregados, sin datos personales. |
+| GET | `/api/reportes` | Administrador | Ingresos, completados, retención, estudiantes por plan, rangos de progreso y Top 10. |
 | GET | `/api/usuarios` | Administrador | Lista las cuentas. |
 | PATCH | `/api/usuarios/:id` | Administrador | Edita nombre, correo, rol o restablece la contraseña. |
 | DELETE | `/api/usuarios/:id` | Administrador | Elimina una cuenta. |
 
 Los errores responden `{ "error": "mensaje", "codigo": "CODIGO" }` y, cuando se puede, `campos` con el detalle por campo.
+
+---
+
+## Estudiantes y cursos
+
+Todo lo que contiene datos personales de estudiantes es **solo para administradores**: el servidor responde `403` a un usuario normal y `401` sin sesión, sin llegar a consultar la base de datos. Un usuario normal solo puede ver el catálogo de cursos y el resumen agregado.
+
+### Listado: `GET /api/estudiantes`
+
+| Parámetro | Descripción |
+| :--- | :--- |
+| `buscar` | Texto en nombre, apellido, nombre completo o correo, sin distinguir mayúsculas. Los comodines `%` y `_` se buscan como texto. |
+| `ciudad`, `plan` | Coincidencia exacta. El plan debe ser Básico, Estándar o Premium. |
+| `curso` | Identificador del curso (el de `/api/cursos`). |
+| `estado` | `activo` o `inactivo`. |
+| `pagina`, `limite` | Página (desde 1) y tamaño (por defecto 12, máximo 100). |
+
+La respuesta incluye `estudiantes`, `total`, `pagina`, `limite` y `paginas`. Los estudiantes se ordenan por `id`.
+
+### Alta y edición
+
+Campos: `nombre`, `apellido`, `email`, `ciudad`, `cursoId`, `plan`, `progreso`, `fechaInscripcion` y `activo` (verdadero por defecto). Reglas:
+
+* Nombre y apellido de hasta 100 caracteres, ciudad de hasta 60, correo válido y único sin distinguir mayúsculas.
+* `progreso` entero de 0 a 100, enviado como número.
+* `fechaInscripcion` real, desde 2023-01-01 hasta hoy. Se tolera un día más para no rechazar a quien registre desde un huso horario por delante del servidor.
+* `plan` y `cursoId` deben existir.
+* **El monto no se envía:** lo calcula el servidor a partir del plan. Cualquier `montoUSD` o `id` que llegue se ignora.
+* Los errores responden `400` con `campos` (un mensaje por campo) o `409` con `EMAIL_DUPLICADO`.
+
+Estas reglas son las mismas que usa el frontend para validar el formulario, de modo que el servidor es la segunda línea de defensa si alguien llama a la API directamente.
 
 ---
 
@@ -200,11 +239,12 @@ La imagen usa `node:24-alpine`, instala solo las dependencias de producción y e
 | `src/app.js` | Creación de la aplicación Express y montaje de rutas. |
 | `src/config.js` | Lectura y validación de variables de entorno. |
 | `src/rutas/` | Rutas de autenticación y de administración de cuentas. |
-| `src/servicios/` | Reglas de negocio de las cuentas. |
+| `src/servicios/` | Reglas de negocio de las cuentas y de los estudiantes. |
 | `src/repositorios/` | Acceso a datos: PostgreSQL y una versión en memoria para pruebas. |
 | `src/db/` | Conexión, ejecutor de migraciones, archivos SQL en `migraciones/`, carga de datos de ejemplo y su archivo en `datos/`. |
 | `scripts/` | Herramientas de desarrollo: base local, preparación del `.env`, carga de ejemplos y pruebas con PostgreSQL. |
 | `src/middleware/` | Sesión, permisos, comprobación de origen, límite de intentos y errores. |
+| `src/validacionEstudiantes.js` | Reglas de validación de estudiantes y de los filtros del listado. |
 | `src/seguridad/` | Hash de contraseñas y firma de sesiones. |
 | `test/` | Pruebas automáticas. |
 | `Dockerfile` | Imagen de la API. |
@@ -248,3 +288,9 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Carga idempotente de 30 cursos y 35 estudiantes de ejemplo, con `SEMBRAR_EJEMPLO` y `npm run db:sembrar`.
 * Las pruebas con PostgreSQL se ejecutan una a una (`--test-concurrency=1`) para no pisarse, y `npm run test:pg` las ejecuta contra una base de pruebas con una protección: se niega a borrar una base cuyo nombre no contenga "test".
 * 123 pruebas.
+
+### Estudiantes y cursos: API
+* Rutas de estudiantes (listado con búsqueda, filtros y paginación, alta, edición y baja) solo para administradores.
+* Catálogo de cursos con inscritos reales, resumen agregado para cualquier sesión y reportes para administradores.
+* Validación en el servidor con las reglas del frontend; el monto se calcula desde el plan.
+* 182 pruebas, incluidas las de la API contra PostgreSQL real y las de permisos con un repositorio falso que comprueba que un usuario normal nunca llega a la base de datos.
