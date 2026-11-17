@@ -44,7 +44,7 @@ describe('acceso a la gestion de cuentas', () => {
     assert.equal(respuesta.estado, 200);
     assert.ok(respuesta.cuerpo.usuarios.length >= 2);
     assert.ok(respuesta.cuerpo.usuarios.every((u) => u.passwordHash === undefined && u.password === undefined));
-    assert.deepEqual(Object.keys(respuesta.cuerpo.usuarios[0]).sort(), ['creadoEn', 'email', 'id', 'nombre', 'rol']);
+    assert.deepEqual(Object.keys(respuesta.cuerpo.usuarios[0]).sort(), ['avatarSemilla', 'creadoEn', 'email', 'id', 'nombre', 'rol']);
   });
 });
 

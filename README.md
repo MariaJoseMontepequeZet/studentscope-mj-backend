@@ -156,7 +156,7 @@ Hay dos roles: `usuario` y `administrador`.
 | POST | `/api/auth/login` | Público | Inicia sesión. |
 | POST | `/api/auth/logout` | Público | Cierra la sesión. |
 | GET | `/api/auth/yo` | Sesión | Datos de la cuenta actual. |
-| PATCH | `/api/auth/yo` | Sesión | Cambia el nombre o la contraseña (exige la actual). |
+| PATCH | `/api/auth/yo` | Sesión | Cambia el nombre, el avatar o la contraseña (exige la actual). |
 | GET | `/api/estudiantes` | Administrador | Lista con búsqueda, filtros y paginación (ver abajo). |
 | GET | `/api/estudiantes/:id` | Administrador | Detalle de un estudiante. |
 | POST | `/api/estudiantes` | Administrador | Crea un estudiante (`201`). |
@@ -294,3 +294,9 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Catálogo de cursos con inscritos reales, resumen agregado para cualquier sesión y reportes para administradores.
 * Validación en el servidor con las reglas del frontend; el monto se calcula desde el plan.
 * 182 pruebas, incluidas las de la API contra PostgreSQL real y las de permisos con un repositorio falso que comprueba que un usuario normal nunca llega a la base de datos.
+
+### Avatar del usuario
+* Nueva columna `usuarios.avatar_semilla` (migración 003): texto de 1 a 40 letras, números, guiones o guiones bajos, o nulo. La base lo exige con una restricción además de la validación de la API.
+* Todas las respuestas de cuenta incluyen `avatarSemilla`. Si es `null`, el frontend usa el correo como semilla.
+* `PATCH /api/auth/yo` acepta `avatarSemilla` (texto válido o `null` para volver al avatar por defecto). Cada persona solo cambia el suyo; el administrador no edita avatares ajenos.
+* 192 pruebas con PostgreSQL (134 sin él): formato, largo máximo, `null`, sesión obligatoria, ambos repositorios y la restricción de la base.

@@ -7,7 +7,8 @@ const COLUMNAS = {
   nombre: 'nombre',
   email: 'email',
   rol: 'rol',
-  passwordHash: 'password_hash'
+  passwordHash: 'password_hash',
+  avatarSemilla: 'avatar_semilla'
 };
 
 function aUsuario(fila) {
@@ -18,6 +19,7 @@ function aUsuario(fila) {
     email: fila.email,
     passwordHash: fila.password_hash,
     rol: fila.rol,
+    avatarSemilla: fila.avatar_semilla,
     creadoEn: fila.creado_en,
     actualizadoEn: fila.actualizado_en
   };
