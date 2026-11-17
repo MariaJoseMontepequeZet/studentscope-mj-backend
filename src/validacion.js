@@ -35,6 +35,16 @@ export function errorPassword(valor) {
   return null;
 }
 
+const REGEX_SEMILLA = /^[A-Za-z0-9_-]{1,40}$/;
+
+export function errorAvatarSemilla(valor) {
+  if (valor === null) return null;
+  if (typeof valor !== 'string' || !REGEX_SEMILLA.test(valor)) {
+    return 'El avatar debe tener de 1 a 40 letras, números, guiones o guiones bajos';
+  }
+  return null;
+}
+
 function reunir(errores) {
   const campos = {};
   Object.entries(errores).forEach(([campo, mensaje]) => {
@@ -100,6 +110,10 @@ export function validarCambiosPerfil(cuerpo = {}) {
   if (cuerpo.nombre !== undefined) {
     errores.nombre = errorNombre(cuerpo.nombre);
     cambios.nombre = typeof cuerpo.nombre === 'string' ? cuerpo.nombre.trim() : cuerpo.nombre;
+  }
+  if (cuerpo.avatarSemilla !== undefined) {
+    errores.avatarSemilla = errorAvatarSemilla(cuerpo.avatarSemilla);
+    cambios.avatarSemilla = cuerpo.avatarSemilla;
   }
   if (cuerpo.passwordNueva !== undefined) {
     errores.passwordNueva = errorPassword(cuerpo.passwordNueva);

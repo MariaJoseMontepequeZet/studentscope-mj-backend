@@ -13,6 +13,7 @@ export function aPublico(usuario) {
     nombre: usuario.nombre,
     email: usuario.email,
     rol: usuario.rol,
+    avatarSemilla: usuario.avatarSemilla ?? null,
     creadoEn: usuario.creadoEn
   };
 }
@@ -76,6 +77,7 @@ export function crearServicioCuentas({ repositorio, config }) {
     async actualizarPerfil(id, cambios) {
       const datos = {};
       if (cambios.nombre !== undefined) datos.nombre = cambios.nombre;
+      if (cambios.avatarSemilla !== undefined) datos.avatarSemilla = cambios.avatarSemilla;
 
       if (cambios.passwordNueva !== undefined) {
         const actual = await repositorio.buscarPorId(id);

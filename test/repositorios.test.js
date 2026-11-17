@@ -26,6 +26,16 @@ if (!urlPruebas) {
     return crearRepositorioUsuariosPg(pool);
   });
 
+  test('postgres: la base rechaza semillas de avatar inválidas', async () => {
+    const repo = crearRepositorioUsuariosPg(pool);
+    await pool.query('TRUNCATE usuarios RESTART IDENTITY');
+    const usuario = await repo.crear({ nombre: 'Ana', email: 'ana@correo.com', passwordHash: 'h', rol: 'usuario' });
+
+    for (const semilla of ['', 'con espacio', 'a'.repeat(41), "x'; DROP TABLE usuarios;--"]) {
+      await assert.rejects(repo.actualizar(usuario.id, { avatarSemilla: semilla }), /check|violates|too long/i);
+    }
+  });
+
   test('postgres: las migraciones se aplican una sola vez', async () => {
     const segundaVez = await migrar(pool);
     const { rows } = await pool.query('SELECT count(*)::int AS total FROM migraciones');

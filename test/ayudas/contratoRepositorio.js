@@ -56,6 +56,19 @@ export function probarContratoRepositorio(nombre, crearRepositorio) {
     assert.equal(await repo.actualizar(999999, { nombre: 'x' }), null);
   });
 
+  test(`${nombre}: guarda y quita la semilla del avatar`, async () => {
+    const repo = await nuevo();
+    const creado = await repo.crear(datos('S'));
+    assert.equal(creado.avatarSemilla ?? null, null);
+
+    const con = await repo.actualizar(creado.id, { avatarSemilla: 'semilla-1' });
+    assert.equal(con.avatarSemilla, 'semilla-1');
+    assert.equal((await repo.buscarPorId(creado.id)).avatarSemilla, 'semilla-1');
+
+    const sin = await repo.actualizar(creado.id, { avatarSemilla: null });
+    assert.equal(sin.avatarSemilla, null);
+  });
+
   test(`${nombre}: no permite repetir un correo al actualizar`, async () => {
     const repo = await nuevo();
     await repo.crear(datos('E1'));
