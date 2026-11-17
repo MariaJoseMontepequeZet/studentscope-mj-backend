@@ -31,6 +31,7 @@ export function crearRepositorioUsuariosMemoria() {
         email,
         passwordHash,
         rol,
+        avatarSemilla: null,
         creadoEn: ahora,
         actualizadoEn: ahora
       };
@@ -64,7 +65,7 @@ export function crearRepositorioUsuariosMemoria() {
       }
       if (cambios.email !== undefined && emailEnUso(cambios.email, id)) throw errorEmailDuplicado();
 
-      ['nombre', 'email', 'rol', 'passwordHash'].forEach((campo) => {
+      ['nombre', 'email', 'rol', 'passwordHash', 'avatarSemilla'].forEach((campo) => {
         if (cambios[campo] !== undefined) actual[campo] = cambios[campo];
       });
       actual.actualizadoEn = new Date();

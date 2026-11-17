@@ -4,6 +4,7 @@ import { crearPool } from './src/db/pool.js';
 import { migrar } from './src/db/migrar.js';
 import { sembrarEstudiantesDeEjemplo } from './src/db/sembrar.js';
 import { describirErrorInicio } from './src/errorInicio.js';
+import { crearRepositorioEstudiantesPg } from './src/repositorios/estudiantesPg.js';
 import { crearRepositorioUsuariosPg } from './src/repositorios/usuariosPg.js';
 
 async function iniciar() {
@@ -16,6 +17,7 @@ async function iniciar() {
 
     const { app, servicio } = crearApp({
       repositorio: crearRepositorioUsuariosPg(pool),
+      repositorioEstudiantes: crearRepositorioEstudiantesPg(pool),
       config,
       comprobarSalud: async () => {
         await pool.query('SELECT 1');

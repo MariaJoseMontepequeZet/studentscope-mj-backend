@@ -248,6 +248,61 @@ describe('perfil propio', () => {
   });
 });
 
+describe('avatar del perfil', () => {
+  let entorno;
+  let cliente;
+  before(async () => {
+    entorno = await iniciarApp();
+    cliente = crearCliente(entorno.base);
+    await cliente.post('/api/auth/registro', REGISTRO);
+  });
+  after(() => entorno.cerrar());
+
+  test('un usuario nuevo no tiene semilla de avatar', async () => {
+    const respuesta = await cliente.get('/api/auth/yo');
+    assert.equal(respuesta.cuerpo.usuario.avatarSemilla, null);
+  });
+
+  test('guarda la semilla y la devuelve en la sesión', async () => {
+    const respuesta = await cliente.patch('/api/auth/yo', { avatarSemilla: 'ab12-CD_9' });
+    assert.equal(respuesta.estado, 200);
+    assert.equal(respuesta.cuerpo.usuario.avatarSemilla, 'ab12-CD_9');
+    assert.equal((await cliente.get('/api/auth/yo')).cuerpo.usuario.avatarSemilla, 'ab12-CD_9');
+  });
+
+  test('cambiar solo el avatar no altera el nombre', async () => {
+    const antes = (await cliente.get('/api/auth/yo')).cuerpo.usuario.nombre;
+    await cliente.patch('/api/auth/yo', { avatarSemilla: 'otra1' });
+    assert.equal((await cliente.get('/api/auth/yo')).cuerpo.usuario.nombre, antes);
+  });
+
+  test('rechaza semillas con formato inválido', async () => {
+    const invalidas = ['', 'con espacio', 'a'.repeat(41), '<script>', 'ñandú', 123, true, {}, []];
+    for (const valor of invalidas) {
+      const respuesta = await cliente.patch('/api/auth/yo', { avatarSemilla: valor });
+      assert.equal(respuesta.estado, 400, `debería rechazar ${JSON.stringify(valor)}`);
+      assert.ok(respuesta.cuerpo.campos.avatarSemilla);
+    }
+    assert.equal((await cliente.get('/api/auth/yo')).cuerpo.usuario.avatarSemilla, 'otra1');
+  });
+
+  test('acepta el largo máximo de 40 caracteres', async () => {
+    const respuesta = await cliente.patch('/api/auth/yo', { avatarSemilla: 'a'.repeat(40) });
+    assert.equal(respuesta.estado, 200);
+  });
+
+  test('null restaura el avatar por defecto', async () => {
+    const respuesta = await cliente.patch('/api/auth/yo', { avatarSemilla: null });
+    assert.equal(respuesta.estado, 200);
+    assert.equal(respuesta.cuerpo.usuario.avatarSemilla, null);
+  });
+
+  test('sin sesión no se puede cambiar', async () => {
+    const respuesta = await crearCliente(entorno.base).patch('/api/auth/yo', { avatarSemilla: 'x1' });
+    assert.equal(respuesta.estado, 401);
+  });
+});
+
 describe('proteccion general', () => {
   let entorno;
   before(async () => {
