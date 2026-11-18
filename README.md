@@ -300,3 +300,8 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Todas las respuestas de cuenta incluyen `avatarSemilla`. Si es `null`, el frontend usa el correo como semilla.
 * `PATCH /api/auth/yo` acepta `avatarSemilla` (texto válido o `null` para volver al avatar por defecto). Cada persona solo cambia el suyo; el administrador no edita avatares ajenos.
 * 192 pruebas con PostgreSQL (134 sin él): formato, largo máximo, `null`, sesión obligatoria, ambos repositorios y la restricción de la base.
+
+### Integración continua
+* Nuevo flujo `CI` (`.github/workflows/ci.yml`): en cada PR hacia `dev` o `main` ejecuta las pruebas contra un PostgreSQL 16 de servicio (`TEST_DATABASE_URL`, así corren también las pruebas de base de datos) y comprueba que la imagen de Docker se construye.
+* El flujo de despliegue usa `actions/checkout@v5`.
+* Para que un PR no se pueda fusionar si el CI falla, se exige el check `Pruebas con PostgreSQL` en la regla de protección de ramas de GitHub.
