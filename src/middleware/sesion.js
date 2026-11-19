@@ -24,10 +24,10 @@ function opcionesCookie(config) {
   return { httpOnly: true, sameSite: 'strict', secure: config.produccion, path: '/' };
 }
 
-export function emitirCookie(res, token, config) {
+export function emitirCookie(res, token, config, horas = config.sesionHoras) {
   res.cookie(NOMBRE_COOKIE, token, {
     ...opcionesCookie(config),
-    maxAge: config.sesionHoras * 60 * 60 * 1000
+    maxAge: horas * 60 * 60 * 1000
   });
 }
 
@@ -48,6 +48,15 @@ export function crearRequiereSesion({ repositorio, config }) {
     req.usuario = usuario;
     next();
   };
+}
+
+const ROLES_DE_GESTION = ['administrador', 'demo'];
+
+export function requiereGestion(req, res, next) {
+  if (!ROLES_DE_GESTION.includes(req.usuario?.rol)) {
+    return next(new ErrorApi(403, 'SIN_PERMISO', 'No tienes permiso para esta acción'));
+  }
+  next();
 }
 
 export function requiereAdministrador(req, res, next) {

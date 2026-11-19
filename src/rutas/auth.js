@@ -47,11 +47,24 @@ export function crearRutasAuth({ servicio, requiereSesion, limiteLogin, config }
     res.status(204).end();
   });
 
+  rutas.post('/demo', async (req, res) => {
+    if (!config.demoHabilitada) {
+      throw new ErrorApi(404, 'DEMO_NO_DISPONIBLE', 'La demo no está disponible');
+    }
+    const usuario = await servicio.iniciarSesionDemo();
+    const token = firmarToken(usuario.id, config.jwtSecreto, config.demoSesionHoras);
+    emitirCookie(res, token, config, config.demoSesionHoras);
+    res.json({ usuario });
+  });
+
   rutas.get('/yo', requiereSesion, (req, res) => {
     res.json({ usuario: aPublico(req.usuario) });
   });
 
   rutas.patch('/yo', requiereSesion, async (req, res) => {
+    if (req.usuario.rol === 'demo') {
+      throw new ErrorApi(403, 'SIN_PERMISO', 'La cuenta de demostración no se puede modificar');
+    }
     const usuario = await servicio.actualizarPerfil(req.usuario.id, validarCambiosPerfil(req.body));
     res.json({ usuario });
   });

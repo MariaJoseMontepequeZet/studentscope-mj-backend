@@ -47,7 +47,7 @@ export function crearApp({
 
   app.use('/api/auth', crearRutasAuth({ servicio, requiereSesion, limiteLogin, config }));
   app.use('/api/usuarios', crearRutasUsuarios({ servicio, requiereSesion }));
-  app.use('/api/estudiantes', crearRutasEstudiantes({ servicio: servicioEstudiantes, requiereSesion, ahora }));
+  app.use('/api/estudiantes', crearRutasEstudiantes({ servicio: servicioEstudiantes, requiereSesion, ahora, config }));
   app.use('/api', crearRutasPanel({ servicio: servicioEstudiantes, requiereSesion }));
 
   app.use((req, res, next) => next(new ErrorApi(404, 'NO_ENCONTRADO', 'No encontrado')));

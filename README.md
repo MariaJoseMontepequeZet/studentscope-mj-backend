@@ -80,6 +80,9 @@ Node no lee el `.env` por sí solo: los scripts `start:local` y `dev` lo cargan 
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Sí* | Alternativa a `DATABASE_URL`, que tiene prioridad. |
 | `JWT_SECRET` | Sí | Secreto para firmar la sesión. Mínimo 32 caracteres. La API no arranca sin él. |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | No | Si no existe ningún administrador, se crea uno con estos datos al iniciar. Si ya existe una cuenta con ese correo, se promueve. |
+| `DEMO_HABILITADA` | No | Con `true` se activa la demo pública: cuenta `demo`, entrada sin credenciales y restauración periódica de los estudiantes. Por defecto `false`. |
+| `DEMO_REINICIO_MINUTOS` | No | Cada cuántos minutos se restauran los estudiantes de ejemplo. Por defecto 60, mínimo 5. |
+| `DEMO_MAX_ESTUDIANTES` | No | Tope de estudiantes que puede crear la cuenta de demo. Por defecto 100. |
 | `SEMBRAR_EJEMPLO` | No | Con `true`, al iniciar carga 35 estudiantes de ejemplo si la tabla de estudiantes está vacía. Por defecto `false`. |
 | `PORT` | No | Puerto de la API. Por defecto `3100`. |
 | `NODE_ENV` | No | Con `production` la cookie de sesión lleva el atributo `Secure`. |
@@ -129,7 +132,7 @@ Los planes y los cursos forman parte de la migración. Los **35 estudiantes de e
 
 ## Cuentas y roles
 
-Hay dos roles: `usuario` y `administrador`.
+Hay dos roles que se pueden asignar, `usuario` y `administrador`, y un tercero interno, `demo`, que solo existe si la demo está activada (ver más abajo).
 
 * Cualquiera puede registrarse; la cuenta nueva siempre es `usuario`. El rol no se puede elegir al registrarse ni desde el perfil.
 * Solo un administrador puede ver, editar, eliminar y cambiar el rol de las cuentas.
@@ -145,6 +148,16 @@ Hay dos roles: `usuario` y `administrador`.
 * El inicio de sesión responde igual con un correo inexistente que con una contraseña incorrecta, y bloquea un correo durante 15 minutos tras 10 intentos fallidos. Este límite se guarda en memoria del proceso.
 * Las respuestas de la API no se guardan en caché y los errores inesperados no revelan detalles internos.
 
+## Demo pública
+
+Pensada para incrustar la aplicación en un portafolio sin pedir registro. Se activa con `DEMO_HABILITADA=true`; apagada, `POST /api/auth/demo` responde `404`.
+
+* **Cuenta `demo`:** se crea al arrancar con la contraseña reemplazada por un valor aleatorio que nadie conoce, así que solo se entra por `POST /api/auth/demo`. Si alguien había registrado antes ese correo, pierde su contraseña. La sesión dura 2 horas.
+* **Qué puede hacer:** ver el panel y los reportes, y crear, editar y eliminar estudiantes. Al crear tiene un tope (`DEMO_MAX_ESTUDIANTES`) para que no se llene la base.
+* **Qué no puede hacer:** ver, editar o eliminar cuentas, ni cambiar su nombre, avatar o contraseña. Un administrador tampoco puede asignar el rol `demo`.
+* **Reinicio:** cada `DEMO_REINICIO_MINUTOS` minutos la tabla de estudiantes se vacía y se vuelve a cargar con los 35 de ejemplo (los identificadores vuelven a empezar en 1), en una transacción y con bloqueo. Las cuentas no se tocan.
+* **Aviso:** con la demo activa se pierde cualquier estudiante que se agregue de verdad. Úsala solo en un despliegue cuyos datos sean de demostración.
+
 ---
 
 ## Endpoints
@@ -155,6 +168,7 @@ Hay dos roles: `usuario` y `administrador`.
 | POST | `/api/auth/registro` | Público | Crea una cuenta con rol `usuario` e inicia sesión. |
 | POST | `/api/auth/login` | Público | Inicia sesión. |
 | POST | `/api/auth/logout` | Público | Cierra la sesión. |
+| POST | `/api/auth/demo` | Pública | Abre una sesión de demo de 2 horas, sin credenciales. Responde `404` si la demo está apagada. |
 | GET | `/api/auth/yo` | Sesión | Datos de la cuenta actual. |
 | PATCH | `/api/auth/yo` | Sesión | Cambia el nombre, el avatar o la contraseña (exige la actual). |
 | GET | `/api/estudiantes` | Administrador | Lista con búsqueda, filtros y paginación (ver abajo). |
@@ -300,3 +314,9 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Todas las respuestas de cuenta incluyen `avatarSemilla`. Si es `null`, el frontend usa el correo como semilla.
 * `PATCH /api/auth/yo` acepta `avatarSemilla` (texto válido o `null` para volver al avatar por defecto). Cada persona solo cambia el suyo; el administrador no edita avatares ajenos.
 * 192 pruebas con PostgreSQL (134 sin él): formato, largo máximo, `null`, sesión obligatoria, ambos repositorios y la restricción de la base.
+
+### Demo pública
+* Nuevo rol interno `demo` (migración 004), entrada `POST /api/auth/demo` con sesión de 2 horas y cuenta sin contraseña conocida.
+* La demo gestiona estudiantes y ve reportes, pero no toca cuentas ni su propio perfil, y tiene un tope de estudiantes.
+* Restauración periódica de los 35 estudiantes de ejemplo.
+* 211 pruebas con PostgreSQL, incluidos permisos, tope, cuenta reservada, el interruptor y la restauración; se comprobó que fallan al romper cada una de esas piezas.
