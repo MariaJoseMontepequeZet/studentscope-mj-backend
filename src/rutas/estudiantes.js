@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requiereAdministrador } from '../middleware/sesion.js';
+import { requiereGestion } from '../middleware/sesion.js';
 import { validarIdUsuario } from '../validacion.js';
 import {
   fechaMaximaPermitida,
@@ -8,9 +8,9 @@ import {
   validarFiltros
 } from '../validacionEstudiantes.js';
 
-export function crearRutasEstudiantes({ servicio, requiereSesion, ahora }) {
+export function crearRutasEstudiantes({ servicio, requiereSesion, ahora, config }) {
   const rutas = Router();
-  rutas.use(requiereSesion, requiereAdministrador);
+  rutas.use(requiereSesion, requiereGestion);
 
   const contexto = () => ({ fechaMaxima: fechaMaximaPermitida(ahora()) });
 
@@ -24,7 +24,8 @@ export function crearRutasEstudiantes({ servicio, requiereSesion, ahora }) {
   });
 
   rutas.post('/', async (req, res) => {
-    const estudiante = await servicio.crear(validarEstudianteNuevo(req.body, contexto()));
+    const maximo = req.usuario.rol === 'demo' ? config.demoMaxEstudiantes : undefined;
+    const estudiante = await servicio.crear(validarEstudianteNuevo(req.body, contexto()), { maximo });
     res.status(201).json({ estudiante });
   });
 
@@ -53,7 +54,7 @@ export function crearRutasPanel({ servicio, requiereSesion }) {
     res.json(await servicio.resumen());
   });
 
-  rutas.get('/reportes', requiereSesion, requiereAdministrador, async (req, res) => {
+  rutas.get('/reportes', requiereSesion, requiereGestion, async (req, res) => {
     res.json(await servicio.reportes());
   });
 

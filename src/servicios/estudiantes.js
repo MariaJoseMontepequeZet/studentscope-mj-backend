@@ -23,7 +23,13 @@ export function crearServicioEstudiantes({ repositorio }) {
       return estudiante;
     },
 
-    crear(datos) {
+    async crear(datos, { maximo } = {}) {
+      if (maximo !== undefined) {
+        const { total } = await repositorio.listar({ pagina: 1, limite: 1 });
+        if (total >= maximo) {
+          throw new ErrorApi(409, 'DEMO_LIMITE', `La demo admite hasta ${maximo} estudiantes`);
+        }
+      }
       return repositorio.crear(datos);
     },
 
