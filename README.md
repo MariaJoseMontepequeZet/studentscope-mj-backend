@@ -320,3 +320,8 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * La demo gestiona estudiantes y ve reportes, pero no toca cuentas ni su propio perfil, y tiene un tope de estudiantes.
 * Restauración periódica de los 35 estudiantes de ejemplo.
 * 211 pruebas con PostgreSQL, incluidos permisos, tope, cuenta reservada, el interruptor y la restauración; se comprobó que fallan al romper cada una de esas piezas.
+
+### Integración continua
+* Nuevo flujo `CI` (`.github/workflows/ci.yml`): en cada PR hacia `dev` o `main` ejecuta las pruebas contra un PostgreSQL 16 de servicio (`TEST_DATABASE_URL`, así corren también las pruebas de base de datos) y comprueba que la imagen de Docker se construye.
+* El flujo de despliegue usa `actions/checkout@v5`.
+* Para que un PR no se pueda fusionar si el CI falla, se exige el check `Pruebas con PostgreSQL` en la regla de protección de ramas de GitHub.
