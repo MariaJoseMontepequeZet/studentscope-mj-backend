@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { ErrorApi } from '../errores.js';
 import {
   gastarTiempoDeVerificacion,
@@ -17,6 +18,8 @@ export function aPublico(usuario) {
     creadoEn: usuario.creadoEn
   };
 }
+
+export const EMAIL_DEMO = 'demo@studentscope.demo';
 
 function credencialesInvalidas() {
   return new ErrorApi(401, 'CREDENCIALES_INVALIDAS', 'Correo o contraseña incorrectos');
@@ -48,6 +51,25 @@ export function crearServicioCuentas({ repositorio, config }) {
       }
       if (!(await verificarPassword(password, usuario.passwordHash))) throw credencialesInvalidas();
       return aPublico(usuario);
+    },
+
+    async iniciarSesionDemo() {
+      const usuario = await repositorio.buscarPorEmail(EMAIL_DEMO);
+      if (!usuario || usuario.rol !== 'demo') {
+        throw new ErrorApi(404, 'DEMO_NO_DISPONIBLE', 'La demo no está disponible');
+      }
+      return aPublico(usuario);
+    },
+
+    async asegurarUsuarioDemo(registrar = () => {}) {
+      const passwordHash = await hashear(randomBytes(32).toString('hex'));
+      const existente = await repositorio.buscarPorEmail(EMAIL_DEMO);
+      if (existente) {
+        await repositorio.actualizar(existente.id, { nombre: 'Demo', rol: 'demo', passwordHash });
+      } else {
+        await repositorio.crear({ nombre: 'Demo', email: EMAIL_DEMO, passwordHash, rol: 'demo' });
+      }
+      registrar('Cuenta de demostración lista');
     },
 
     async listar() {

@@ -29,6 +29,21 @@ describe('configuracion', () => {
     assert.equal(config.produccion, true);
   });
 
+  test('la demo viene apagada y con valores prudentes', () => {
+    const config = leerConfig(base);
+    assert.equal(config.demoHabilitada, false);
+    assert.equal(config.demoReinicioMinutos, 60);
+    assert.equal(config.demoMaxEstudiantes, 100);
+  });
+
+  test('lee la demo y no permite reinicios demasiado seguidos', () => {
+    const config = leerConfig({ ...base, DEMO_HABILITADA: 'true', DEMO_REINICIO_MINUTOS: '1', DEMO_MAX_ESTUDIANTES: '0' });
+    assert.equal(config.demoHabilitada, true);
+    assert.equal(config.demoReinicioMinutos, 5);
+    assert.equal(config.demoMaxEstudiantes, 1);
+    assert.equal(leerConfig({ ...base, DEMO_HABILITADA: 'yes' }).demoHabilitada, false);
+  });
+
   test('exige un secreto JWT de al menos 32 caracteres', () => {
     assert.throws(() => leerConfig({ ...base, JWT_SECRET: 'corto' }), /JWT_SECRET/);
     assert.throws(() => leerConfig({ ...base, JWT_SECRET: undefined }), /JWT_SECRET/);

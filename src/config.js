@@ -31,6 +31,10 @@ export function leerConfig(env = process.env) {
     costeBcrypt: numero(env.BCRYPT_COSTE, 12),
     adminEmail: env.ADMIN_EMAIL?.trim().toLowerCase() || null,
     adminPassword: env.ADMIN_PASSWORD || null,
-    sembrarEjemplo: env.SEMBRAR_EJEMPLO === 'true'
+    sembrarEjemplo: env.SEMBRAR_EJEMPLO === 'true',
+    demoHabilitada: env.DEMO_HABILITADA === 'true',
+    demoReinicioMinutos: Math.max(5, numero(env.DEMO_REINICIO_MINUTOS, 60)),
+    demoMaxEstudiantes: Math.max(1, numero(env.DEMO_MAX_ESTUDIANTES, 100)),
+    demoSesionHoras: 2
   };
 }
