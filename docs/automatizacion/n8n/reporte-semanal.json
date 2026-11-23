@@ -1,0 +1,157 @@
+{
+  "name": "StudentScope MJ: reporte semanal",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "cada-lunes",
+      "name": "Cada lunes a las 8",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.STUDENTSCOPE_URL }}/api/auth/login",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ email: $env.STUDENTSCOPE_EMAIL, password: $env.STUDENTSCOPE_PASSWORD }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "iniciar-sesion",
+      "name": "Iniciar sesión",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.STUDENTSCOPE_URL }}/api/reportes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cookie",
+              "value": "={{ $('Iniciar sesión').first().json.headers['set-cookie'][0].split(';')[0] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "reportes",
+      "name": "Reportes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Arma el correo del reporte semanal con lo que devolvió GET /api/reportes\nconst r = $('Reportes').first().json;\nconst dos = (n) => String(n).padStart(2, '0');\nconst hoy = new Date();\nconst fecha = dos(hoy.getDate()) + '/' + dos(hoy.getMonth() + 1) + '/' + hoy.getFullYear();\nconst plan = (r.porPlan || []).map((p) => '  - ' + p.plan + ': ' + p.total).join('\\n');\nconst rangos = (r.rangosProgreso || []).map((p) => '  - ' + p.rango + ': ' + p.total).join('\\n');\n\nconst texto = [\n  'Reporte semanal de StudentScope MJ (' + fecha + ')',\n  '',\n  'Estudiantes: ' + r.total + ' (' + r.activos + ' activos, ' + (r.total - r.activos) + ' inactivos)',\n  'Progreso promedio: ' + r.progresoPromedio + '%',\n  'Completaron el curso: ' + r.completaron,\n  'Retención: ' + r.retencionPorcentaje + '%',\n  'Ingresos acumulados: US$ ' + Number(r.ingresosUSD).toFixed(2),\n  '',\n  'Estudiantes por plan:',\n  plan,\n  '',\n  'Estudiantes por rango de progreso:',\n  rangos\n].join('\\n');\n\nreturn [{ json: { asunto: 'StudentScope MJ: reporte semanal del ' + fecha, texto } }];"
+      },
+      "id": "armar-mensaje",
+      "name": "Armar mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.AVISOS_REMITENTE }}",
+        "toEmail": "={{ $env.AVISOS_DESTINO }}",
+        "subject": "={{ $json.asunto }}",
+        "emailFormat": "text",
+        "text": "={{ $json.texto }}",
+        "options": {}
+      },
+      "id": "enviar-correo",
+      "name": "Enviar correo",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        960,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Cada lunes a las 8": {
+      "main": [
+        [
+          {
+            "node": "Iniciar sesión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Iniciar sesión": {
+      "main": [
+        [
+          {
+            "node": "Reportes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reportes": {
+      "main": [
+        [
+          {
+            "node": "Armar mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar mensaje": {
+      "main": [
+        [
+          {
+            "node": "Enviar correo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
