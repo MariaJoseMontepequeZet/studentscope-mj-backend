@@ -9,12 +9,17 @@ export function firmarToken(usuarioId, secreto, horas) {
   });
 }
 
-export function leerToken(token, secreto) {
+export function leerCarga(token, secreto) {
   try {
     const carga = jwt.verify(token, secreto, { algorithms: [ALGORITMO] });
     const id = Number(carga.sub);
-    return Number.isInteger(id) ? id : null;
+    if (!Number.isInteger(id) || !Number.isFinite(carga.iat)) return null;
+    return { id, emitidoEn: carga.iat };
   } catch {
     return null;
   }
+}
+
+export function leerToken(token, secreto) {
+  return leerCarga(token, secreto)?.id ?? null;
 }

@@ -32,6 +32,7 @@ export function crearRepositorioUsuariosMemoria() {
         passwordHash,
         rol,
         avatarSemilla: null,
+        credencialesEn: null,
         creadoEn: ahora,
         actualizadoEn: ahora
       };
@@ -68,6 +69,7 @@ export function crearRepositorioUsuariosMemoria() {
       ['nombre', 'email', 'rol', 'passwordHash', 'avatarSemilla'].forEach((campo) => {
         if (cambios[campo] !== undefined) actual[campo] = cambios[campo];
       });
+      if (cambios.passwordHash !== undefined) actual.credencialesEn = new Date();
       actual.actualizadoEn = new Date();
       return copia(actual);
     },
