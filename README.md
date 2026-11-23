@@ -357,3 +357,8 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Nuevo servicio en Python (FastAPI y scikit-learn) en `servicios/riesgo-abandono/`: estima la probabilidad de abandono con una regresión logística explicable y devuelve los factores que más pesaron.
 * La evaluación es honesta: validación cruzada repetida, comparación con un modelo trivial y prueba de permutaciones contra el azar. Con los 3 abandonos de los datos de ejemplo no es concluyente, y cada respuesta lo declara.
 * Nuevo `GET /api/estudiantes/:id/riesgo` y variable opcional `RIESGO_URL`. 33 pruebas del servicio con `pytest` y 10 nuevas en la API.
+
+### Integración continua
+* Nuevo flujo `CI` (`.github/workflows/ci.yml`): en cada PR hacia `dev` o `main` ejecuta las pruebas contra un PostgreSQL 16 de servicio (`TEST_DATABASE_URL`, así corren también las pruebas de base de datos) y comprueba que la imagen de Docker se construye.
+* El flujo de despliegue usa `actions/checkout@v5`.
+* Para que un PR no se pueda fusionar si el CI falla, se exige el check `Pruebas con PostgreSQL` en la regla de protección de ramas de GitHub.
