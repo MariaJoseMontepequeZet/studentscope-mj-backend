@@ -65,7 +65,9 @@ export function crearRutasAuth({ servicio, requiereSesion, limiteLogin, config }
     if (req.usuario.rol === 'demo') {
       throw new ErrorApi(403, 'SIN_PERMISO', 'La cuenta de demostración no se puede modificar');
     }
-    const usuario = await servicio.actualizarPerfil(req.usuario.id, validarCambiosPerfil(req.body));
+    const cambios = validarCambiosPerfil(req.body);
+    const usuario = await servicio.actualizarPerfil(req.usuario.id, cambios);
+    if (cambios.passwordNueva !== undefined) abrirSesion(res, usuario);
     res.json({ usuario });
   });
 

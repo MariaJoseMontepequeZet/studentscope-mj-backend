@@ -20,6 +20,7 @@ function aUsuario(fila) {
     passwordHash: fila.password_hash,
     rol: fila.rol,
     avatarSemilla: fila.avatar_semilla,
+    credencialesEn: fila.credenciales_en,
     creadoEn: fila.creado_en,
     actualizadoEn: fila.actualizado_en
   };
@@ -118,6 +119,11 @@ export function crearRepositorioUsuariosPg(pool) {
           asignaciones.push(`${columna} = $${valores.length}`);
         });
         if (asignaciones.length === 0) return actual;
+
+        if (cambios.passwordHash !== undefined) {
+          valores.push(new Date());
+          asignaciones.push(`credenciales_en = $${valores.length}`);
+        }
 
         valores.push(id);
         const resultado = await cliente.query(

@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { requiereAdministrador } from '../middleware/sesion.js';
+import { emitirCookie, requiereAdministrador } from '../middleware/sesion.js';
+import { firmarToken } from '../seguridad/token.js';
 import { validarCambiosAdmin, validarIdUsuario } from '../validacion.js';
 
-export function crearRutasUsuarios({ servicio, requiereSesion }) {
+export function crearRutasUsuarios({ servicio, requiereSesion, config }) {
   const rutas = Router();
   rutas.use(requiereSesion, requiereAdministrador);
 
@@ -12,7 +13,11 @@ export function crearRutasUsuarios({ servicio, requiereSesion }) {
 
   rutas.patch('/:id', async (req, res) => {
     const id = validarIdUsuario(req.params.id);
-    const usuario = await servicio.actualizarComoAdministrador(id, validarCambiosAdmin(req.body));
+    const cambios = validarCambiosAdmin(req.body);
+    const usuario = await servicio.actualizarComoAdministrador(id, cambios);
+    if (id === req.usuario.id && cambios.password !== undefined) {
+      emitirCookie(res, firmarToken(usuario.id, config.jwtSecreto, config.sesionHoras), config);
+    }
     res.json({ usuario });
   });
 

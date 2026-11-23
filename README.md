@@ -83,6 +83,7 @@ Node no lee el `.env` por sí solo: los scripts `start:local` y `dev` lo cargan 
 | `DEMO_HABILITADA` | No | Con `true` se activa la demo pública: cuenta `demo`, entrada sin credenciales y restauración periódica de los estudiantes. Por defecto `false`. |
 | `DEMO_REINICIO_MINUTOS` | No | Cada cuántos minutos se restauran los estudiantes de ejemplo. Por defecto 60, mínimo 5. |
 | `DEMO_MAX_ESTUDIANTES` | No | Tope de estudiantes que puede crear la cuenta de demo. Por defecto 100. |
+| `RIESGO_URL` | No | Dirección del servicio de riesgo de abandono (por ejemplo `http://riesgo:8000`). Sin ella, `GET /api/estudiantes/:id/riesgo` responde `503`. |
 | `SEMBRAR_EJEMPLO` | No | Con `true`, al iniciar carga 35 estudiantes de ejemplo si la tabla de estudiantes está vacía. Por defecto `false`. |
 | `PORT` | No | Puerto de la API. Por defecto `3100`. |
 | `NODE_ENV` | No | Con `production` la cookie de sesión lleva el atributo `Secure`. |
@@ -176,6 +177,7 @@ Pensada para incrustar la aplicación en un portafolio sin pedir registro. Se ac
 | POST | `/api/estudiantes` | Administrador | Crea un estudiante (`201`). |
 | PATCH | `/api/estudiantes/:id` | Administrador | Edita solo los campos enviados. |
 | DELETE | `/api/estudiantes/:id` | Administrador | Elimina un estudiante (`204`). |
+| GET | `/api/estudiantes/:id/riesgo` | Administrador | Estimación del riesgo de abandono de un estudiante, calculada por el [servicio de riesgo](servicios/riesgo-abandono/README.md). Responde `503` si no está configurado y `502` si no responde. |
 | GET | `/api/cursos` | Sesión | Catálogo de 30 cursos con el número real de inscritos. |
 | GET | `/api/resumen` | Sesión | Totales, activos, progreso promedio y estudiantes por ciudad. Solo números agregados, sin datos personales. |
 | GET | `/api/reportes` | Administrador | Ingresos, completados, retención, estudiantes por plan, rangos de progreso y Top 10. |
@@ -184,6 +186,18 @@ Pensada para incrustar la aplicación en un portafolio sin pedir registro. Se ac
 | DELETE | `/api/usuarios/:id` | Administrador | Elimina una cuenta. |
 
 Los errores responden `{ "error": "mensaje", "codigo": "CODIGO" }` y, cuando se puede, `campos` con el detalle por campo.
+
+La referencia de cada endpoint (campos, reglas, respuestas y todos los códigos de error) está en [`docs/api.md`](docs/api.md).
+
+### Colección de Postman
+
+En `docs/postman/` hay una colección con casos felices y de error de cada endpoint, y un entorno `Local`.
+
+1. En Postman, **Import** y elige los dos archivos de `docs/postman/`.
+2. Elige el entorno **StudentScope MJ - Local** y, si vas a probar la carpeta **Administrador**, completa `adminEmail` y `adminPassword` con una cuenta administradora de tu base local.
+3. Con la API en marcha (`npm run start:local`), pulsa **Run** sobre la colección. Las carpetas se ejecutan en orden y cada petición trae sus propias comprobaciones.
+
+Postman guarda la cookie de sesión sola, y un script de la colección agrega el encabezado `Origin` que la API exige en las peticiones que cambian datos. Sin Postman de escritorio, la misma colección corre en consola con `npx newman run docs/postman/StudentScope-MJ.postman_collection.json -e docs/postman/Local.postman_environment.json --env-var adminEmail=... --env-var adminPassword=...`.
 
 ---
 
@@ -320,6 +334,29 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * La demo gestiona estudiantes y ve reportes, pero no toca cuentas ni su propio perfil, y tiene un tope de estudiantes.
 * Restauración periódica de los 35 estudiantes de ejemplo.
 * 211 pruebas con PostgreSQL, incluidos permisos, tope, cuenta reservada, el interruptor y la restauración; se comprobó que fallan al romper cada una de esas piezas.
+
+### Sesiones y cambio de contraseña
+* Nueva columna `usuarios.credenciales_en` (migración 005): la fecha del último cambio de contraseña, o nula si nunca cambió.
+* Una sesión emitida antes de ese cambio deja de servir. Cuando alguien cambia su contraseña, o un administrador cambia la de otra cuenta, las demás sesiones abiertas de esa cuenta se cierran; la persona que cambió la suya conserva la sesión con una cookie nueva.
+* Cambiar solo el nombre, el avatar o el rol no cierra sesiones: el rol ya se lee de la base en cada petición.
+* 217 pruebas con PostgreSQL; se comprobó que las de cierre de sesión fallan si se quita la comparación.
+* El límite de intentos de inicio de sesión sigue siendo por correo. Uno por IP bloquearía a todos a la vez detrás de Cloudflare y Caddy, porque la API vería siempre la IP del proxy; queda pendiente hasta confirmar la cabecera de IP real.
+
+### Colección de Postman
+* Nueva colección en `docs/postman/` con 45 peticiones y sus comprobaciones: registro, inicio y cierre de sesión, perfil, permisos de usuario normal, estudiantes (alta, edición, baja y errores), reportes, cuentas y rutas sin sesión.
+* Nueva referencia de la API en `docs/api.md`, con todos los códigos de error.
+* La colección se ejecutó entera contra la API local: 89 comprobaciones sin fallos.
+
+### Automatización y análisis de datos
+* Plantillas de n8n en `docs/automatizacion/n8n/`: reporte semanal por correo y aviso diario de estudiantes inactivos sin terminar. Llegan desactivadas y sin credenciales; la guía paso a paso está en `docs/automatizacion/README.md`.
+* Nueva migración `006_vistas_bi.sql` con tres vistas para análisis (`vw_bi_estudiantes`, `vw_bi_cursos`, `vw_bi_resumen_mensual`) que no incluyen nombre, apellido ni correo, y un guion para crear un usuario que solo lee esas vistas.
+* Pruebas: 10 sobre las plantillas (la lógica de los nodos se ejecuta con datos reales) y 8 sobre las vistas y el usuario de lectura; se comprobó que fallan si una vista expone el correo.
+* Las plantillas no se importaron en una instancia real de n8n ni se armó el tablero de Power BI: la guía lo indica.
+
+### Riesgo de abandono con un modelo
+* Nuevo servicio en Python (FastAPI y scikit-learn) en `servicios/riesgo-abandono/`: estima la probabilidad de abandono con una regresión logística explicable y devuelve los factores que más pesaron.
+* La evaluación es honesta: validación cruzada repetida, comparación con un modelo trivial y prueba de permutaciones contra el azar. Con los 3 abandonos de los datos de ejemplo no es concluyente, y cada respuesta lo declara.
+* Nuevo `GET /api/estudiantes/:id/riesgo` y variable opcional `RIESGO_URL`. 33 pruebas del servicio con `pytest` y 10 nuevas en la API.
 
 ### Integración continua
 * Nuevo flujo `CI` (`.github/workflows/ci.yml`): en cada PR hacia `dev` o `main` ejecuta las pruebas contra un PostgreSQL 16 de servicio (`TEST_DATABASE_URL`, así corren también las pruebas de base de datos) y comprueba que la imagen de Docker se construye.

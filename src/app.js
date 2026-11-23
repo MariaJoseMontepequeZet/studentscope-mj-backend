@@ -9,6 +9,7 @@ import { crearRutasEstudiantes, crearRutasPanel } from './rutas/estudiantes.js';
 import { crearRutasUsuarios } from './rutas/usuarios.js';
 import { crearServicioCuentas } from './servicios/cuentas.js';
 import { crearServicioEstudiantes } from './servicios/estudiantes.js';
+import { crearClienteRiesgo } from './servicios/riesgo.js';
 
 const SIN_REPOSITORIO_DE_ESTUDIANTES = new Proxy(
   {},
@@ -27,6 +28,7 @@ export function crearApp({
   config,
   ahora = () => new Date(),
   comprobarSalud = async () => true,
+  clienteRiesgo = crearClienteRiesgo({ url: config.riesgoUrl }),
   limiteLogin = crearLimiteIntentos(),
   registrarError = console.error
 }) {
@@ -46,8 +48,8 @@ export function crearApp({
   });
 
   app.use('/api/auth', crearRutasAuth({ servicio, requiereSesion, limiteLogin, config }));
-  app.use('/api/usuarios', crearRutasUsuarios({ servicio, requiereSesion }));
-  app.use('/api/estudiantes', crearRutasEstudiantes({ servicio: servicioEstudiantes, requiereSesion, ahora, config }));
+  app.use('/api/usuarios', crearRutasUsuarios({ servicio, requiereSesion, config }));
+  app.use('/api/estudiantes', crearRutasEstudiantes({ servicio: servicioEstudiantes, requiereSesion, ahora, config, clienteRiesgo }));
   app.use('/api', crearRutasPanel({ servicio: servicioEstudiantes, requiereSesion }));
 
   app.use((req, res, next) => next(new ErrorApi(404, 'NO_ENCONTRADO', 'No encontrado')));
