@@ -327,3 +327,8 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Cambiar solo el nombre, el avatar o el rol no cierra sesiones: el rol ya se lee de la base en cada petición.
 * 217 pruebas con PostgreSQL; se comprobó que las de cierre de sesión fallan si se quita la comparación.
 * El límite de intentos de inicio de sesión sigue siendo por correo. Uno por IP bloquearía a todos a la vez detrás de Cloudflare y Caddy, porque la API vería siempre la IP del proxy; queda pendiente hasta confirmar la cabecera de IP real.
+
+### Integración continua
+* Nuevo flujo `CI` (`.github/workflows/ci.yml`): en cada PR hacia `dev` o `main` ejecuta las pruebas contra un PostgreSQL 16 de servicio (`TEST_DATABASE_URL`, así corren también las pruebas de base de datos) y comprueba que la imagen de Docker se construye.
+* El flujo de despliegue usa `actions/checkout@v5`.
+* Para que un PR no se pueda fusionar si el CI falla, se exige el check `Pruebas con PostgreSQL` en la regla de protección de ramas de GitHub.
