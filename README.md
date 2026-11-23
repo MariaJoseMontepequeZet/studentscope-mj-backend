@@ -350,3 +350,8 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Nueva migración `006_vistas_bi.sql` con tres vistas para análisis (`vw_bi_estudiantes`, `vw_bi_cursos`, `vw_bi_resumen_mensual`) que no incluyen nombre, apellido ni correo, y un guion para crear un usuario que solo lee esas vistas.
 * Pruebas: 10 sobre las plantillas (la lógica de los nodos se ejecuta con datos reales) y 8 sobre las vistas y el usuario de lectura; se comprobó que fallan si una vista expone el correo.
 * Las plantillas no se importaron en una instancia real de n8n ni se armó el tablero de Power BI: la guía lo indica.
+
+### Integración continua
+* Nuevo flujo `CI` (`.github/workflows/ci.yml`): en cada PR hacia `dev` o `main` ejecuta las pruebas contra un PostgreSQL 16 de servicio (`TEST_DATABASE_URL`, así corren también las pruebas de base de datos) y comprueba que la imagen de Docker se construye.
+* El flujo de despliegue usa `actions/checkout@v5`.
+* Para que un PR no se pueda fusionar si el CI falla, se exige el check `Pruebas con PostgreSQL` en la regla de protección de ramas de GitHub.
