@@ -320,3 +320,10 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * La demo gestiona estudiantes y ve reportes, pero no toca cuentas ni su propio perfil, y tiene un tope de estudiantes.
 * Restauración periódica de los 35 estudiantes de ejemplo.
 * 211 pruebas con PostgreSQL, incluidos permisos, tope, cuenta reservada, el interruptor y la restauración; se comprobó que fallan al romper cada una de esas piezas.
+
+### Sesiones y cambio de contraseña
+* Nueva columna `usuarios.credenciales_en` (migración 005): la fecha del último cambio de contraseña, o nula si nunca cambió.
+* Una sesión emitida antes de ese cambio deja de servir. Cuando alguien cambia su contraseña, o un administrador cambia la de otra cuenta, las demás sesiones abiertas de esa cuenta se cierran; la persona que cambió la suya conserva la sesión con una cookie nueva.
+* Cambiar solo el nombre, el avatar o el rol no cierra sesiones: el rol ya se lee de la base en cada petición.
+* 217 pruebas con PostgreSQL; se comprobó que las de cierre de sesión fallan si se quita la comparación.
+* El límite de intentos de inicio de sesión sigue siendo por correo. Uno por IP bloquearía a todos a la vez detrás de Cloudflare y Caddy, porque la API vería siempre la IP del proxy; queda pendiente hasta confirmar la cabecera de IP real.

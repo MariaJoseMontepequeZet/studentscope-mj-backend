@@ -112,4 +112,18 @@ export function probarContratoRepositorio(nombre, crearRepositorio) {
     assert.equal(resultados.filter((r) => r.status === 'fulfilled').length, 1);
     assert.equal(await repo.contarAdministradores(), 1);
   });
+
+  test(`${nombre}: anota cuando cambia la contrasena y solo entonces`, async () => {
+    const repo = await nuevo();
+    const creado = await repo.crear(datos('Z'));
+    assert.equal(creado.credencialesEn ?? null, null);
+
+    const trasNombre = await repo.actualizar(creado.id, { nombre: 'Otro nombre' });
+    assert.equal(trasNombre.credencialesEn ?? null, null);
+
+    const antes = Date.now();
+    const trasClave = await repo.actualizar(creado.id, { passwordHash: 'otro-hash' });
+    const anotada = new Date(trasClave.credencialesEn).getTime();
+    assert.ok(anotada >= antes - 1000 && anotada <= Date.now() + 1000);
+  });
 }

@@ -1,5 +1,5 @@
 import { ErrorApi } from '../errores.js';
-import { leerToken } from '../seguridad/token.js';
+import { leerCarga } from '../seguridad/token.js';
 
 export const NOMBRE_COOKIE = 'sesion';
 
@@ -35,11 +35,17 @@ export function limpiarCookie(res, config) {
   res.clearCookie(NOMBRE_COOKIE, opcionesCookie(config));
 }
 
+function anteriorAlCambioDeClave(usuario, carga) {
+  if (!usuario.credencialesEn) return false;
+  return Math.floor(new Date(usuario.credencialesEn).getTime() / 1000) > carga.emitidoEn;
+}
+
 export function crearRequiereSesion({ repositorio, config }) {
   return async function requiereSesion(req, res, next) {
     const token = leerCookie(req, NOMBRE_COOKIE);
-    const id = token ? leerToken(token, config.jwtSecreto) : null;
-    const usuario = id ? await repositorio.buscarPorId(id) : null;
+    const carga = token ? leerCarga(token, config.jwtSecreto) : null;
+    const encontrado = carga ? await repositorio.buscarPorId(carga.id) : null;
+    const usuario = encontrado && !anteriorAlCambioDeClave(encontrado, carga) ? encontrado : null;
 
     if (!usuario) {
       limpiarCookie(res, config);
