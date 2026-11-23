@@ -185,6 +185,18 @@ Pensada para incrustar la aplicación en un portafolio sin pedir registro. Se ac
 
 Los errores responden `{ "error": "mensaje", "codigo": "CODIGO" }` y, cuando se puede, `campos` con el detalle por campo.
 
+La referencia de cada endpoint (campos, reglas, respuestas y todos los códigos de error) está en [`docs/api.md`](docs/api.md).
+
+### Colección de Postman
+
+En `docs/postman/` hay una colección con casos felices y de error de cada endpoint, y un entorno `Local`.
+
+1. En Postman, **Import** y elige los dos archivos de `docs/postman/`.
+2. Elige el entorno **StudentScope MJ - Local** y, si vas a probar la carpeta **Administrador**, completa `adminEmail` y `adminPassword` con una cuenta administradora de tu base local.
+3. Con la API en marcha (`npm run start:local`), pulsa **Run** sobre la colección. Las carpetas se ejecutan en orden y cada petición trae sus propias comprobaciones.
+
+Postman guarda la cookie de sesión sola, y un script de la colección agrega el encabezado `Origin` que la API exige en las peticiones que cambian datos. Sin Postman de escritorio, la misma colección corre en consola con `npx newman run docs/postman/StudentScope-MJ.postman_collection.json -e docs/postman/Local.postman_environment.json --env-var adminEmail=... --env-var adminPassword=...`.
+
 ---
 
 ## Estudiantes y cursos
@@ -327,3 +339,8 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Cambiar solo el nombre, el avatar o el rol no cierra sesiones: el rol ya se lee de la base en cada petición.
 * 217 pruebas con PostgreSQL; se comprobó que las de cierre de sesión fallan si se quita la comparación.
 * El límite de intentos de inicio de sesión sigue siendo por correo. Uno por IP bloquearía a todos a la vez detrás de Cloudflare y Caddy, porque la API vería siempre la IP del proxy; queda pendiente hasta confirmar la cabecera de IP real.
+
+### Colección de Postman
+* Nueva colección en `docs/postman/` con 45 peticiones y sus comprobaciones: registro, inicio y cierre de sesión, perfil, permisos de usuario normal, estudiantes (alta, edición, baja y errores), reportes, cuentas y rutas sin sesión.
+* Nueva referencia de la API en `docs/api.md`, con todos los códigos de error.
+* La colección se ejecutó entera contra la API local: 89 comprobaciones sin fallos.
