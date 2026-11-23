@@ -344,3 +344,8 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Nueva colección en `docs/postman/` con 45 peticiones y sus comprobaciones: registro, inicio y cierre de sesión, perfil, permisos de usuario normal, estudiantes (alta, edición, baja y errores), reportes, cuentas y rutas sin sesión.
 * Nueva referencia de la API en `docs/api.md`, con todos los códigos de error.
 * La colección se ejecutó entera contra la API local: 89 comprobaciones sin fallos.
+
+### Integración continua
+* Nuevo flujo `CI` (`.github/workflows/ci.yml`): en cada PR hacia `dev` o `main` ejecuta las pruebas contra un PostgreSQL 16 de servicio (`TEST_DATABASE_URL`, así corren también las pruebas de base de datos) y comprueba que la imagen de Docker se construye.
+* El flujo de despliegue usa `actions/checkout@v5`.
+* Para que un PR no se pueda fusionar si el CI falla, se exige el check `Pruebas con PostgreSQL` en la regla de protección de ramas de GitHub.
