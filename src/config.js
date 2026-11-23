@@ -35,6 +35,7 @@ export function leerConfig(env = process.env) {
     demoHabilitada: env.DEMO_HABILITADA === 'true',
     demoReinicioMinutos: Math.max(5, numero(env.DEMO_REINICIO_MINUTOS, 60)),
     demoMaxEstudiantes: Math.max(1, numero(env.DEMO_MAX_ESTUDIANTES, 100)),
-    demoSesionHoras: 2
+    demoSesionHoras: 2,
+    riesgoUrl: env.RIESGO_URL?.trim().replace(/\/+$/, '') || null
   };
 }

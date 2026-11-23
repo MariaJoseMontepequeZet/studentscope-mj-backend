@@ -8,7 +8,7 @@ import {
   validarFiltros
 } from '../validacionEstudiantes.js';
 
-export function crearRutasEstudiantes({ servicio, requiereSesion, ahora, config }) {
+export function crearRutasEstudiantes({ servicio, requiereSesion, ahora, config, clienteRiesgo }) {
   const rutas = Router();
   rutas.use(requiereSesion, requiereGestion);
 
@@ -16,6 +16,11 @@ export function crearRutasEstudiantes({ servicio, requiereSesion, ahora, config 
 
   rutas.get('/', async (req, res) => {
     res.json(await servicio.listar(validarFiltros(req.query)));
+  });
+
+  rutas.get('/:id/riesgo', async (req, res) => {
+    const estudiante = await servicio.obtener(validarIdUsuario(req.params.id));
+    res.json({ riesgo: await clienteRiesgo.evaluar(estudiante) });
   });
 
   rutas.get('/:id', async (req, res) => {
