@@ -344,3 +344,9 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Nueva colección en `docs/postman/` con 45 peticiones y sus comprobaciones: registro, inicio y cierre de sesión, perfil, permisos de usuario normal, estudiantes (alta, edición, baja y errores), reportes, cuentas y rutas sin sesión.
 * Nueva referencia de la API en `docs/api.md`, con todos los códigos de error.
 * La colección se ejecutó entera contra la API local: 89 comprobaciones sin fallos.
+
+### Automatización y análisis de datos
+* Plantillas de n8n en `docs/automatizacion/n8n/`: reporte semanal por correo y aviso diario de estudiantes inactivos sin terminar. Llegan desactivadas y sin credenciales; la guía paso a paso está en `docs/automatizacion/README.md`.
+* Nueva migración `006_vistas_bi.sql` con tres vistas para análisis (`vw_bi_estudiantes`, `vw_bi_cursos`, `vw_bi_resumen_mensual`) que no incluyen nombre, apellido ni correo, y un guion para crear un usuario que solo lee esas vistas.
+* Pruebas: 10 sobre las plantillas (la lógica de los nodos se ejecuta con datos reales) y 8 sobre las vistas y el usuario de lectura; se comprobó que fallan si una vista expone el correo.
+* Las plantillas no se importaron en una instancia real de n8n ni se armó el tablero de Power BI: la guía lo indica.
