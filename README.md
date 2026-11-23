@@ -83,6 +83,7 @@ Node no lee el `.env` por sí solo: los scripts `start:local` y `dev` lo cargan 
 | `DEMO_HABILITADA` | No | Con `true` se activa la demo pública: cuenta `demo`, entrada sin credenciales y restauración periódica de los estudiantes. Por defecto `false`. |
 | `DEMO_REINICIO_MINUTOS` | No | Cada cuántos minutos se restauran los estudiantes de ejemplo. Por defecto 60, mínimo 5. |
 | `DEMO_MAX_ESTUDIANTES` | No | Tope de estudiantes que puede crear la cuenta de demo. Por defecto 100. |
+| `RIESGO_URL` | No | Dirección del servicio de riesgo de abandono (por ejemplo `http://riesgo:8000`). Sin ella, `GET /api/estudiantes/:id/riesgo` responde `503`. |
 | `SEMBRAR_EJEMPLO` | No | Con `true`, al iniciar carga 35 estudiantes de ejemplo si la tabla de estudiantes está vacía. Por defecto `false`. |
 | `PORT` | No | Puerto de la API. Por defecto `3100`. |
 | `NODE_ENV` | No | Con `production` la cookie de sesión lleva el atributo `Secure`. |
@@ -176,6 +177,7 @@ Pensada para incrustar la aplicación en un portafolio sin pedir registro. Se ac
 | POST | `/api/estudiantes` | Administrador | Crea un estudiante (`201`). |
 | PATCH | `/api/estudiantes/:id` | Administrador | Edita solo los campos enviados. |
 | DELETE | `/api/estudiantes/:id` | Administrador | Elimina un estudiante (`204`). |
+| GET | `/api/estudiantes/:id/riesgo` | Administrador | Estimación del riesgo de abandono de un estudiante, calculada por el [servicio de riesgo](servicios/riesgo-abandono/README.md). Responde `503` si no está configurado y `502` si no responde. |
 | GET | `/api/cursos` | Sesión | Catálogo de 30 cursos con el número real de inscritos. |
 | GET | `/api/resumen` | Sesión | Totales, activos, progreso promedio y estudiantes por ciudad. Solo números agregados, sin datos personales. |
 | GET | `/api/reportes` | Administrador | Ingresos, completados, retención, estudiantes por plan, rangos de progreso y Top 10. |
@@ -350,3 +352,8 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Nueva migración `006_vistas_bi.sql` con tres vistas para análisis (`vw_bi_estudiantes`, `vw_bi_cursos`, `vw_bi_resumen_mensual`) que no incluyen nombre, apellido ni correo, y un guion para crear un usuario que solo lee esas vistas.
 * Pruebas: 10 sobre las plantillas (la lógica de los nodos se ejecuta con datos reales) y 8 sobre las vistas y el usuario de lectura; se comprobó que fallan si una vista expone el correo.
 * Las plantillas no se importaron en una instancia real de n8n ni se armó el tablero de Power BI: la guía lo indica.
+
+### Riesgo de abandono con un modelo
+* Nuevo servicio en Python (FastAPI y scikit-learn) en `servicios/riesgo-abandono/`: estima la probabilidad de abandono con una regresión logística explicable y devuelve los factores que más pesaron.
+* La evaluación es honesta: validación cruzada repetida, comparación con un modelo trivial y prueba de permutaciones contra el azar. Con los 3 abandonos de los datos de ejemplo no es concluyente, y cada respuesta lo declara.
+* Nuevo `GET /api/estudiantes/:id/riesgo` y variable opcional `RIESGO_URL`. 33 pruebas del servicio con `pytest` y 10 nuevas en la API.

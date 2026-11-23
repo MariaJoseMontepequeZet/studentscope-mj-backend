@@ -28,6 +28,8 @@ Referencia de cada endpoint. La colección de Postman con casos felices y de err
 | 409 | `ULTIMO_ADMINISTRADOR` | Se intentó degradar o eliminar al único administrador. |
 | 409 | `NO_AUTOELIMINAR` | Un administrador intentó eliminar su propia cuenta. |
 | 409 | `DEMO_LIMITE` | La cuenta de demostración llegó al tope de estudiantes. |
+| 502 | `RIESGO_NO_RESPONDE`, `RIESGO_ERROR` | El servicio de riesgo de abandono no respondió o devolvió un error. |
+| 503 | `RIESGO_NO_DISPONIBLE` | No hay `RIESGO_URL` configurada. |
 | 429 | `DEMASIADOS_INTENTOS` | Demasiados inicios de sesión fallidos para ese correo. |
 
 ## Salud
@@ -112,6 +114,9 @@ Edita solo los campos enviados, con las mismas reglas. Un cuerpo vacío da `400`
 
 ### `DELETE /api/estudiantes/:id`
 `204`. Error: `404 ESTUDIANTE_NO_ENCONTRADO`.
+
+### `GET /api/estudiantes/:id/riesgo`
+Estima el riesgo de abandono con el [servicio de riesgo](../servicios/riesgo-abandono/README.md). `200 { "riesgo": { probabilidad, nivel, factores, concluyente, aviso, version_modelo } }`. Errores: `400 ID_INVALIDO`, `404 ESTUDIANTE_NO_ENCONTRADO`, `502 RIESGO_NO_RESPONDE` o `RIESGO_ERROR`, `503 RIESGO_NO_DISPONIBLE` si no hay `RIESGO_URL`.
 
 ## Panel
 
