@@ -9,7 +9,7 @@ Qué está probado y qué no:
 
 * La lógica que arma los mensajes de n8n y las vistas de PostgreSQL tienen pruebas automáticas (`test/automatizacion.test.js` y `test/vistasBi.test.js`).
 * Las tres plantillas de n8n se importaron y ejecutaron en n8n 2.48.7 contra la API local, con envío real de correo por Gmail (SMTP, puerto 465). Los números de los correos coinciden con los de la API. Los flujos se probaron ejecutándolos a mano; la hora programada no se esperó.
-* El tablero de Power BI **no se construyó aquí**. Los pasos de abajo son los que hay que seguir y comprobar la primera vez.
+* Power BI Desktop se conectó a las vistas con el usuario de solo lectura, cargó las tres tablas (35, 30 y 28 filas, sin nombre ni correo) y dos medidas dieron 35 estudiantes y 14,3 % de finalización, igual que la API. No se armó un tablero completo ni se publicó en la nube.
 
 ---
 
@@ -133,15 +133,15 @@ Si Power BI pide un proveedor de PostgreSQL, instala **Npgsql** (lo ofrece el pr
 
 ### 4. Medidas sugeridas
 
-En la tabla `vw_bi_estudiantes`, **Nueva medida**:
+Power BI nombra las tablas con el esquema: la vista aparece como `public vw_bi_estudiantes` (con espacio). En las fórmulas hay que escribirla entre comillas simples, o da "No se ha podido resolver el nombre". En esa tabla, **Nueva medida**:
 
 ```
-Estudiantes = COUNTROWS(vw_bi_estudiantes)
-Completaron = CALCULATE([Estudiantes], vw_bi_estudiantes[estado] = "Completó")
-Abandonaron = CALCULATE([Estudiantes], vw_bi_estudiantes[estado] = "Abandonó")
+Estudiantes = COUNTROWS('public vw_bi_estudiantes')
+Completaron = CALCULATE([Estudiantes], 'public vw_bi_estudiantes'[estado] = "Completó")
+Abandonaron = CALCULATE([Estudiantes], 'public vw_bi_estudiantes'[estado] = "Abandonó")
 Tasa de finalización = DIVIDE([Completaron], [Estudiantes])
-Ingresos USD = SUM(vw_bi_estudiantes[monto_usd])
-Progreso promedio = AVERAGE(vw_bi_estudiantes[progreso])
+Ingresos USD = SUM('public vw_bi_estudiantes'[monto_usd])
+Progreso promedio = AVERAGE('public vw_bi_estudiantes'[progreso])
 ```
 
 Páginas que funcionan bien con estos datos: tarjetas con las medidas de arriba, barras de `Estudiantes` por `curso` y por `ciudad`, anillo de `estado`, y una línea de `inscripciones` por `mes` desde `vw_bi_resumen_mensual`.
