@@ -12,6 +12,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Clave local del usuario de solo lectura de Power BI
+docs/automatizacion/power-bi/clave-local.txt
+
 # Logs y cobertura
 *.log
 coverage/
