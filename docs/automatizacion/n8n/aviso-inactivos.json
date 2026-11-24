@@ -121,7 +121,9 @@
         "subject": "={{ $json.asunto }}",
         "emailFormat": "text",
         "text": "={{ $json.texto }}",
-        "options": {}
+        "options": {
+          "appendAttribution": false
+        }
       },
       "id": "enviar-correo",
       "name": "Enviar correo",
