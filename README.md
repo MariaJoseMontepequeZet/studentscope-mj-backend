@@ -362,3 +362,7 @@ El workflow copia el código a la carpeta del servidor y ejecuta `desplegar.sh a
 * Nuevo flujo `CI` (`.github/workflows/ci.yml`): en cada PR hacia `dev` o `main` ejecuta las pruebas contra un PostgreSQL 16 de servicio (`TEST_DATABASE_URL`, así corren también las pruebas de base de datos) y comprueba que la imagen de Docker se construye.
 * El flujo de despliegue usa `actions/checkout@v5`.
 * Para que un PR no se pueda fusionar si el CI falla, se exige el check `Pruebas con PostgreSQL` en la regla de protección de ramas de GitHub.
+
+### Clave local de Power BI en .gitignore
+* `docs/automatizacion/power-bi/clave-local.txt` pasa a `.gitignore`. Antes solo la protegía una exclusión local de toda la carpeta `docs/`, que además ocultaba cualquier documento nuevo en `git status`.
+* Una prueba vigila que la clave siga en `.gitignore`.

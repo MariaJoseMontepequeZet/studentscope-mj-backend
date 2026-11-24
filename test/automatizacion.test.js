@@ -137,3 +137,11 @@ describe('plantillas de n8n', () => {
     assert.match(aviso.texto, /Hay más inactivos/);
   });
 });
+
+describe('secretos de Power BI', () => {
+  test('la clave local de Power BI esta en .gitignore y no depende de exclusiones locales', () => {
+    const ignorados = readFileSync(new URL('../.gitignore', import.meta.url), 'utf8');
+
+    assert.match(ignorados, /^docs\/automatizacion\/power-bi\/clave-local\.txt\r?$/m);
+  });
+});
