@@ -8,7 +8,8 @@ Dos formas de sacar más provecho de los datos de StudentScope MJ sin tocar su c
 Qué está probado y qué no:
 
 * La lógica que arma los mensajes de n8n y las vistas de PostgreSQL tienen pruebas automáticas (`test/automatizacion.test.js` y `test/vistasBi.test.js`).
-* Las plantillas de n8n **no se han importado en una instancia real de n8n** y el tablero de Power BI **no se construyó aquí**. Los pasos de abajo son los que hay que seguir y comprobar la primera vez.
+* Las tres plantillas de n8n se importaron y ejecutaron en n8n 2.48.7 contra la API local, con envío real de correo por Gmail (SMTP, puerto 465). Los números de los correos coinciden con los de la API. Los flujos se probaron ejecutándolos a mano; la hora programada no se esperó.
+* El tablero de Power BI **no se construyó aquí**. Los pasos de abajo son los que hay que seguir y comprobar la primera vez.
 
 ---
 
@@ -20,6 +21,9 @@ Las plantillas están en `docs/automatizacion/n8n/` y llegan desactivadas:
 | :--- | :--- | :--- |
 | `reporte-semanal.json` | Lunes a las 8:00 | Pide `GET /api/reportes` y envía por correo el total de estudiantes, progreso, completados, retención, ingresos y desglose por plan y rango. |
 | `aviso-inactivos.json` | Todos los días a las 8:00 | Pide los estudiantes inactivos y, si alguno dejó el curso sin terminarlo, envía la lista de menor a mayor progreso. Si no hay ninguno, no envía nada. |
+| `reporte-demo.json` | A mano (botón Execute) | Igual que el reporte semanal, pero entra con la sesión de demostración (`POST /api/auth/demo`): no necesita cuenta de administrador ni contraseña. Sirve para enseñar la automatización sobre la demo pública. Requiere `DEMO_HABILITADA=true` en la API. |
+
+El aviso de inactivos incluye nombre y correo de cada estudiante. Con datos de ejemplo no importa, pero con alumnos reales ese correo lleva datos personales: envíalo solo a quien deba verlos.
 
 ### 1. Crea una cuenta solo para n8n
 
@@ -69,7 +73,9 @@ En n8n: **Workflows**, el menú de los tres puntos, **Import from file**, y elig
 
 ### 4. Conecta el correo
 
-En ambas plantillas, el nodo **Enviar correo** necesita una credencial **SMTP**. Con Gmail: activa la verificación en dos pasos, crea una contraseña de aplicación en la cuenta de Google, y en n8n crea la credencial con servidor `smtp.gmail.com`, puerto `465`, SSL activado, tu correo como usuario y esa contraseña de aplicación. Las plantillas no traen ninguna credencial guardada.
+En ambas plantillas, el nodo **Enviar correo** necesita una credencial **SMTP**. Con Gmail: activa la verificación en dos pasos, crea una contraseña de aplicación en la cuenta de Google, y en n8n crea la credencial con servidor `smtp.gmail.com`, puerto `465`, SSL activado, tu correo como usuario y esa contraseña de aplicación. Las plantillas no traen ninguna credencial guardada. Los correos salen sin la firma "sent automatically with n8n" (`appendAttribution: false`); n8n guarda la copia que importaste, así que si ya habías importado una versión anterior hay que importarla otra vez para quitarla.
+
+Para probarlo en tu computadora sin tocar el servidor, `docs/automatizacion/n8n/probar-local.ps1` levanta un n8n aparte (puerto 5679 y su propia carpeta de datos) apuntado a la API local, con la cuenta de administrador de tu `.env`. Pon antes `AVISOS_REMITENTE` y `AVISOS_DESTINO` en la terminal si vas a enviar correos. La API debe estar en `127.0.0.1`: con `localhost` n8n puede resolver IPv6 y recibir "connection refused".
 
 ### 5. Pruébalas y actívalas
 
