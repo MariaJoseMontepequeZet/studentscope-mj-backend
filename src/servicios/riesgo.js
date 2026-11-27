@@ -28,7 +28,11 @@ export function crearClienteRiesgo({ url, peticion = fetch, esperaMs = ESPERA_PO
       if (!respuesta.ok) {
         throw new ErrorApi(502, 'RIESGO_ERROR', 'El servicio de riesgo de abandono devolvió un error');
       }
-      return respuesta.json();
+      try {
+        return await respuesta.json();
+      } catch {
+        throw new ErrorApi(502, 'RIESGO_ERROR', 'El servicio de riesgo de abandono devolvió un error');
+      }
     }
   };
 }
