@@ -32,6 +32,14 @@ function noEncontrado() {
 export function crearServicioCuentas({ repositorio, config }) {
   const hashear = (password) => hashearPassword(password, config.costeBcrypt);
 
+  // La cuenta de demostración la administra el servidor: editarla o borrarla rompería la demo
+  async function protegerCuentaDemo(id) {
+    const usuario = await repositorio.buscarPorId(id);
+    if (usuario?.rol === 'demo') {
+      throw new ErrorApi(409, 'CUENTA_DEMO', 'La cuenta de demostración no se puede modificar');
+    }
+  }
+
   return {
     async registrar({ nombre, email, password }) {
       const usuario = await repositorio.crear({
@@ -78,6 +86,7 @@ export function crearServicioCuentas({ repositorio, config }) {
     },
 
     async actualizarComoAdministrador(id, cambios) {
+      await protegerCuentaDemo(id);
       const datos = {};
       ['nombre', 'email', 'rol'].forEach((campo) => {
         if (cambios[campo] !== undefined) datos[campo] = cambios[campo];
@@ -93,6 +102,7 @@ export function crearServicioCuentas({ repositorio, config }) {
       if (idActor === id) {
         throw new ErrorApi(409, 'NO_AUTOELIMINAR', 'No puedes eliminar tu propia cuenta');
       }
+      await protegerCuentaDemo(id);
       if (!(await repositorio.eliminar(id))) throw noEncontrado();
     },
 
