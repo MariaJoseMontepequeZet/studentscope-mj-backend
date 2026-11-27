@@ -28,6 +28,8 @@ Referencia de cada endpoint. La colección de Postman con casos felices y de err
 | 409 | `ULTIMO_ADMINISTRADOR` | Se intentó degradar o eliminar al único administrador. |
 | 409 | `NO_AUTOELIMINAR` | Un administrador intentó eliminar su propia cuenta. |
 | 409 | `DEMO_LIMITE` | La cuenta de demostración llegó al tope de estudiantes. |
+| 409 | `CUENTA_DEMO` | Un administrador intentó editar o eliminar la cuenta de demostración. |
+| 400 a 499 | `SOLICITUD_INVALIDA` | El cuerpo llegó con una codificación o un formato que no se puede leer. |
 | 502 | `RIESGO_NO_RESPONDE`, `RIESGO_ERROR` | El servicio de riesgo de abandono no respondió o devolvió un error. |
 | 503 | `RIESGO_NO_DISPONIBLE` | No hay `RIESGO_URL` configurada. |
 | 429 | `DEMASIADOS_INTENTOS` | Demasiados inicios de sesión fallidos para ese correo. |
@@ -46,7 +48,7 @@ Público. Crea una cuenta con rol `usuario` e inicia sesión.
 | :--- | :--- |
 | `nombre` | Obligatorio, hasta 100 caracteres. |
 | `email` | Correo válido, hasta 254 caracteres, único sin distinguir mayúsculas. |
-| `password` | De 8 a 72 caracteres, con letras y números. |
+| `password` | De 8 a 72 caracteres (y hasta 72 bytes en UTF-8), con letras y números. |
 
 `201 { "usuario": { id, nombre, email, rol, avatarSemilla, creadoEn } }`. Errores: `400 DATOS_INVALIDOS`, `409 EMAIL_DUPLICADO`.
 

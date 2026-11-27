@@ -16,6 +16,11 @@ export function manejarErrores(registrar = console.error) {
       return res.status(413).json({ error: 'El cuerpo es demasiado grande', codigo: 'CUERPO_GRANDE' });
     }
 
+    // Otros rechazos del lector del cuerpo, como una codificación no admitida
+    if (error.type && error.status >= 400 && error.status < 500) {
+      return res.status(error.status).json({ error: 'La solicitud no es válida', codigo: 'SOLICITUD_INVALIDA' });
+    }
+
     registrar('Error no controlado:', error);
     res.status(500).json({ error: 'Error interno del servidor', codigo: 'ERROR_INTERNO' });
   };

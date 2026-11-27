@@ -4,6 +4,7 @@ const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const ROLES = ['usuario', 'administrador'];
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 72;
+export const ID_MAXIMO = 2147483647;
 
 function fallar(campos) {
   throw new ErrorApi(400, 'DATOS_INVALIDOS', 'Revisa los datos enviados', campos);
@@ -29,6 +30,10 @@ export function errorPassword(valor) {
   if (typeof valor !== 'string') return 'La contraseña es obligatoria';
   if (valor.length < PASSWORD_MIN) return `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres`;
   if (valor.length > PASSWORD_MAX) return `La contraseña no puede superar ${PASSWORD_MAX} caracteres`;
+  // bcrypt solo usa los primeros 72 bytes: los acentos y emojis ocupan más de uno
+  if (Buffer.byteLength(valor, 'utf8') > PASSWORD_MAX) {
+    return 'La contraseña es demasiado larga: los acentos y símbolos especiales ocupan más';
+  }
   if (!/[A-Za-z]/.test(valor) || !/\d/.test(valor)) {
     return 'La contraseña debe incluir letras y números';
   }
@@ -131,8 +136,8 @@ export function validarCambiosPerfil(cuerpo = {}) {
 }
 
 export function validarIdUsuario(valor) {
-  const id = Number(valor);
-  if (!Number.isInteger(id) || id <= 0) {
+  const id = /^\d{1,10}$/.test(String(valor)) ? Number(valor) : 0;
+  if (id <= 0 || id > ID_MAXIMO) {
     throw new ErrorApi(400, 'ID_INVALIDO', 'El identificador no es válido');
   }
   return id;

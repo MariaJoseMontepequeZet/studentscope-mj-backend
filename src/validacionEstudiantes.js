@@ -1,5 +1,5 @@
 import { ErrorApi } from './errores.js';
-import { errorEmail, errorNombre, normalizarEmail } from './validacion.js';
+import { ID_MAXIMO, errorEmail, errorNombre, normalizarEmail } from './validacion.js';
 
 export const PLANES = ['Básico', 'Estándar', 'Premium'];
 export const FECHA_MINIMA = '2023-01-01';
@@ -31,8 +31,9 @@ function reunir(errores) {
 }
 
 function esEnteroPositivo(valor) {
-  if (typeof valor === 'number') return Number.isInteger(valor) && valor > 0;
-  return typeof valor === 'string' && /^\d+$/.test(valor) && Number(valor) > 0;
+  const esNumero = typeof valor === 'number' || (typeof valor === 'string' && /^\d+$/.test(valor));
+  const numero = esNumero ? Number(valor) : 0;
+  return Number.isInteger(numero) && numero > 0 && numero <= ID_MAXIMO;
 }
 
 function esFechaReal(texto) {
